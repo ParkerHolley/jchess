@@ -1,0 +1,78 @@
+package example;
+
+import java.util.Scanner;
+
+/**
+ * @author Parker
+ * An array-controlled grid test. Our final chessboard will likely be written around one of these.
+ */
+
+public class ASCII {
+    public static final int GRIDSIZE = 10;//constant that determines square grid dimensions
+    public static int getx(int indx) {
+        return indx%GRIDSIZE;//index mod'd by # of columns
+    }
+    public static int gety(int indx) {
+        return indx/GRIDSIZE;//index intdiv'd by # of columns
+    }
+    public static boolean canMove(int dest) {
+        return !(getx(dest) == 0 || gety(dest) == 0 || getx(dest) == GRIDSIZE-1 || gety(dest) == GRIDSIZE-1);
+    }
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+        int[] grid  = new int[(GRIDSIZE*GRIDSIZE)];//this and playersize should be in a constructor
+        grid[GRIDSIZE+1] = 1;
+        int playerpos = GRIDSIZE+1;
+        System.out.printf("len: %d\ngrid[0]: %d\n", grid.length, grid[0]);
+        while(true){
+            for (int i = 0; i < grid.length; i++) {
+                if(!canMove(i)){
+                    System.out.print("x");
+                } else if(grid[i] == 1) {
+                    System.out.print("@");
+                } else {
+                    System.out.print(",");
+                }
+                if(i%GRIDSIZE == GRIDSIZE-1){
+                    System.out.println("");
+                }
+            }
+            //System.out.printf("playerpos: %d\n",playerpos);
+            String command = input.nextLine();
+            switch(command){
+                case "n":
+                    if(canMove(playerpos-GRIDSIZE)){
+                        grid[playerpos] = 0;//with a constructor for global vars we can make a function
+                        grid[playerpos-GRIDSIZE] = 1;//instead of a big nasty switch statement
+                        playerpos -= GRIDSIZE;
+                    }
+                    break;
+                case "s":
+                    if(canMove(playerpos+GRIDSIZE)){
+                        grid[playerpos] = 0;
+                        grid[playerpos+GRIDSIZE] = 1;
+                        playerpos += GRIDSIZE;
+                    }
+                    break;
+                case "e":
+                    if(canMove(playerpos+1)){
+                        grid[playerpos] = 0;
+                        grid[playerpos+1] = 1;
+                        playerpos++;
+                    }
+                    break;
+                case "w":
+                    if(canMove(playerpos-1)){
+                        grid[playerpos] = 0;
+                        grid[playerpos-1] = 1;
+                        playerpos--;
+                    }
+                    break;
+                default:
+                    System.out.println("Invalid command");
+                    return;
+            }
+        }
+    }
+}
