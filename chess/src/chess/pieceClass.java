@@ -47,6 +47,48 @@ public class pieceClass {
                 movements[6] = new char[]{'w','w','s'};
                 movements[7] = new char[]{'w','w','n'};
                 return movements;
+            case "queen"://7 tiles in any dir, 1 less than board width
+                movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
+                movements[1] = new char[]{'N','N','N','N','N','N','N','N'};
+                movements[2] = new char[]{'e','e','e','e','e','e','e','e'};
+                movements[3] = new char[]{'E','E','E','E','E','E','E','E'};
+                movements[4] = new char[]{'s','s','s','s','s','s','s','s'};
+                movements[5] = new char[]{'S','S','S','S','S','S','S','S'};
+                movements[6] = new char[]{'w','w','w','w','w','w','w','w'};
+                movements[7] = new char[]{'W','W','W','W','W','W','W','W'};
+                return movements;
+                //ensure movement checker doesnt let it move OOB. same for rook/bishop
+            case "king":
+                movements[0] = new char[]{'n'};
+                movements[1] = new char[]{'N'};
+                movements[2] = new char[]{'e'};
+                movements[3] = new char[]{'E'};
+                movements[4] = new char[]{'s'};
+                movements[5] = new char[]{'S'};
+                movements[6] = new char[]{'w'};
+                movements[7] = new char[]{'W'};
+                return movements;
+                //needs special handling to not move into check(mate)
+            case "whitepawn":
+                movements[0] = new char[]{'e'};
+                movements[0] = new char[]{'e','e'};
+                return movements;
+            case "blackpawn":
+                movements[0] = new char[]{'w'};
+                movements[0] = new char[]{'w','w'};
+                return movements;
+                //needs special handling for diagonal kills
+            case "rook":
+                movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
+                movements[1] = new char[]{'e','e','e','e','e','e','e','e'};
+                movements[2] = new char[]{'s','s','s','s','s','s','s','s'};
+                movements[3] = new char[]{'w','w','w','w','w','w','w','w'};
+                return movements;
+            case "bishop":
+                movements[0] = new char[]{'N','N','N','N','N','N','N','N'};
+                movements[1] = new char[]{'E','E','E','E','E','E','E','E'};
+                movements[2] = new char[]{'S','S','S','S','S','S','S','S'};
+                movements[3] = new char[]{'W','W','W','W','W','W','W','W'};
             default:
                 return new char[0][0];//blanks are dummies that cant move
         }
