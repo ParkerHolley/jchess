@@ -1,5 +1,5 @@
 /* Code
- * - 8*8 array grid
+ * - 8*8 array grid (defacto 7*7 that starts at 0)
  * - s = +8, n = -8, e = +1, w = -1, diagonals will be macros of cardinals
  * - if we use coords, % for row, intdiv for column
  * - Class for each piece (one for blank space? or just nulls)
@@ -33,13 +33,39 @@ package chess;
  *
  * @author Parker
  */
-public class Chess {
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        //Chesspiece[] board  = new Chesspiece[8*8];
-            //need an object type for a chess tile before this array will work
+public class Chess {
+    //define helping arrays and vars
+    public static final String[] STARTINGPOSITIONS = {"rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", "bpawn", "bpawn",
+    "bpawn","bpawn","bpawn","bpawn","bpawn","bpawn","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
+    "b","b","b","b","b","b","b","b","b","b","b","b","b","b","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn",
+    "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"};
+    
+    //declare the board
+    public static pieceClass[] board  = new pieceClass[8*8];
+    
+    
+    
+    public static void setUpBoard(){//initiailize the board
+        for(int i = 0; i < board.length; i++){
+            board[i] = new pieceClass(STARTINGPOSITIONS[i], i);
+        }
+    }
+    
+    public static void moveSpace(int fromIndx, int toIndx){//move from an index to another
+        board[toIndx] = board[fromIndx];//piece clones to new index
+        board[toIndx].index = toIndx;//update its internal index
+        board[fromIndx] = new pieceClass("b", fromIndx);//replace old space with blank piece
+    }
+    
+    public static void main(String[] args) {//main function (will likely be moved to UI)
+        setUpBoard();
+        
+        //testing code
+        System.out.println(board[Helpers.coord2index(5, 7)].type);
+        System.out.println(board[Helpers.coord2index(5, 5)].type);
+        moveSpace(Helpers.coord2index(5, 7), Helpers.coord2index(5, 5));
+        System.out.println(board[Helpers.coord2index(5, 7)].type);
+        System.out.println(board[Helpers.coord2index(5, 5)].type);
     }
 }
