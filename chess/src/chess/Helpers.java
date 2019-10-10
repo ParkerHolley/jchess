@@ -41,6 +41,18 @@ public class Helpers {
             case 'w':
                 modifier = -1;
                 break;
+            case 'N'://capital dirs are diagonals, starting at NE and going clockwise. this is NE
+                modifier = (BOARDSIZE*-1)+1;
+                break;
+            case 'E'://SE
+                modifier = BOARDSIZE+1;
+                break;
+            case 'S'://SW
+                modifier = BOARDSIZE-1;
+                break;
+            case 'W'://NW
+                modifier = (BOARDSIZE*-1)-1;
+                break;
             default:
                 System.out.print("Bad dir in mov helper");
                 System.exit(1);//kill the program. this is basically improvised linting
