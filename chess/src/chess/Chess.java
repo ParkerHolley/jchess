@@ -47,25 +47,68 @@ public class Chess {
     
     
     public static void setUpBoard(){//initiailize the board
+        boolean isWhite = false;
         for(int i = 0; i < board.length; i++){
-            board[i] = new pieceClass(STARTINGPOSITIONS[i], i);
+            if(!isWhite && i > 15) isWhite = true;//all black pieces start in positions 0-15
+            board[i] = new pieceClass(STARTINGPOSITIONS[i], i, isWhite, true);
         }
     }
     
     public static void moveSpace(int fromIndx, int toIndx){//move from an index to another
         board[toIndx] = board[fromIndx];//piece clones to new index
-        board[toIndx].index = toIndx;//update its internal index
-        board[fromIndx] = new pieceClass("b", fromIndx);//replace old space with blank piece
+        board[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
+        board[fromIndx] = new pieceClass("b", fromIndx, false, false);//replace old space with blank piece
     }
     
     public static void main(String[] args) {//main function (will likely be moved to UI)
         setUpBoard();
         
         //testing code
+        
+        /* Read what pieces are at 5,7 and 5,5. Move 5,7 to 5,5. Read again.
         System.out.println(board[Helpers.coord2index(5, 7)].type);
         System.out.println(board[Helpers.coord2index(5, 5)].type);
         moveSpace(Helpers.coord2index(5, 7), Helpers.coord2index(5, 5));
         System.out.println(board[Helpers.coord2index(5, 7)].type);
         System.out.println(board[Helpers.coord2index(5, 5)].type);
+        */
+        
+        /* Read if the pieces at 0,6 and 0,1 are white. See what pieces 0,6 can kill.
+        System.out.println("0,6 is white? "+board[Helpers.coord2index(0, 6)].isWhite);//expecting true
+        System.out.println("0,1 is white? "+board[Helpers.coord2index(0, 1)].isWhite);//expecting false
+        System.out.println("Can 0,6 kill 0,1? "+Helpers.isEnemyOccupied(Helpers.coord2index(0,6), Helpers.coord2index(0,1), board));//expecting true
+        System.out.println("Can 0,6 kill 0,7? "+Helpers.isEnemyOccupied(Helpers.coord2index(0,6), Helpers.coord2index(0,7), board));//expecting false
+        */
+
+        /* Make 0,6 into a black piece. See that it is killable by the rook. Kill it with the rook.
+        board[Helpers.coord2index(0,6)].isWhite = false;
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,6)));
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,7)));
+        moveSpace(Helpers.coord2index(0, 7), Helpers.coord2index(0, 6));
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,6)));
+        */
+        
+        /* Knight movement check for the bottom-left-most knight.
+        System.out.println("Knight at 1,7 moves: "+Helpers.potentialMoves(board,Helpers.coord2index(1,7)));
+        System.out.println(Helpers.getCoords(42));
+        System.out.println(Helpers.getCoords(40));
+        */
+        
+        /* Spawn a rook at 1,4 and check its movement.
+        System.out.println(Helpers.coord2index(1,4));
+        board[Helpers.coord2index(1, 4)] = new pieceClass("rook", Helpers.coord2index(1, 4), false, false);
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(1,4)));
+        */
+        
+        /* Spawn a black unit at 2,5 and 4,5. See how the pawns below it are able to kill them.
+        board[Helpers.coord2index(2, 5)] = new pieceClass("queen", Helpers.coord2index(2, 5), false, false);//indx 42
+        board[Helpers.coord2index(4, 5)] = new pieceClass("queen", Helpers.coord2index(4, 5), false, false);//indx 44
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(1,6)));//49
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(2,6)));//50
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(3,6)));//51
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(4,6)));//52
+        board[53].moved(53);//no longer unmoved; after first move, pawns can only move forward 1 tile
+        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(5,6)));//53
+        */
     }
 }

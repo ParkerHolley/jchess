@@ -30,12 +30,18 @@ public class pieceClass {
     int xCoord = 0;//x coord in coordinate plane
     int yCoord = 0;//y coord
     boolean manySteps = false;//can the piece have more than 8 movements?
+    boolean isWhite = false;//is the pawn black or white?
+    boolean unmoved = true;//has the pawn been moved before?
+    boolean isPawn = false;//is the unit a pawn? needed for pawnKills
     char[][] movements  = new char[8][];//see above documentation 
+    char[] pawnKills = new char[2];//pawn diagonal kill moves
     
-    public pieceClass(String type, int index){
+    public pieceClass(String type, int index, boolean isWhite, boolean unmoved){
         //set by user
         this.type = type;
         this.index = index;
+        this.isWhite = isWhite;
+        this.unmoved = unmoved;
         
         //set by helpers
         this.xCoord = Helpers.getX(index);
@@ -77,14 +83,19 @@ public class pieceClass {
                 break;
                 //needs special handling to not move into check(mate)
             case "wpawn"://white pawn
+                this.isPawn = true;
+                this.pawnKills = new char[]{'W','N'};
+                
                 movements[0] = new char[]{'n'};
-                movements[0] = new char[]{'n','n'};
+                movements[1] = new char[]{'n','n'};
                 break;
             case "bpawn"://black pawn
+                this.isPawn = true;
+                this.pawnKills = new char[]{'E','S'};
+                
                 movements[0] = new char[]{'s'};
-                movements[0] = new char[]{'s','s'};
+                movements[1] = new char[]{'s','s'};
                 break;
-                //needs special handling for diagonal kills
             case "rook":
                 this.manySteps = true;
                 movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
@@ -101,6 +112,14 @@ public class pieceClass {
                 break;
             default:
                 //blanks do not have movement
+        }
+    }
+    
+    public void moved(int newIndex){
+        this.unmoved = false;
+        this.index = newIndex;
+        if(this.isPawn){
+            this.movements[1] = null;
         }
     }
 }
