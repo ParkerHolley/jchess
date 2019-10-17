@@ -8,8 +8,9 @@
 
 package chess;
 
-//import java.util.Arrays; //not sure if this will be needed
+import java.util.Arrays; //not sure if this will be needed
 import java.util.ArrayList;
+import java.util.function.Predicate;
 
 /**
  *
@@ -82,7 +83,7 @@ public class Helpers {
         return movIndex(coord2index(x,y), dir, steps);//macro to do mov code with coords
     }
 
-    public static int[] potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
+    public static ArrayList potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
         ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
         pieceClass piece = board[pieceIndx];
         for (char[] movement : piece.movements) {
@@ -116,12 +117,66 @@ public class Helpers {
                 }
             }
         }
-        Integer[] convertStep = potentials.toArray(new Integer[potentials.size()]);
+        return potentials;
+    }
+    
+    public static int[] intList2prim(ArrayList<Integer> toConvert){//returns Integer ArrayList as primitive int[]
+        Integer[] convertStep = toConvert.toArray(new Integer[toConvert.size()]);
         int[] returnable = new int[convertStep.length];
         for(int i = 0; i < convertStep.length; i++){
             returnable[i] = convertStep[i];
         }
-        return returnable;//may need refactor to also output list of potential kills
+        return returnable;
+    }
+    
+    public static ArrayList purgeListDupes(ArrayList<Integer> toPurge){//removes duplicate entries from Integer ArrayLists
+        ArrayList<Integer> tempList = new ArrayList<>();
+        toPurge.stream().filter(new PredicateImpl(tempList)).forEachOrdered((eachItem) -> {
+            tempList.add(eachItem);
+        });//i wrote this with a for loop, netbeans corrected it to use a stream. not sure how that works,
+        return tempList;//but it seems that it does
+    }
+    
+    public static boolean isIntInList(int[] theList, int theInt){
+        return Arrays.stream(theList).anyMatch(i -> i == theInt);
+    }
+    
+    public static int[] getAllOfColor(pieceClass[] board, boolean isWhite){//returns an array of indexes of all pieces of a specified color
+        int[] validIndexes = new int[16];//16 potential pieces max
+        int addToIndex = 0;
+        Arrays.fill(validIndexes, -1);
+        for (pieceClass piece:board) {
+            if(piece.isWhite == isWhite && !piece.type.equals("b")){
+                validIndexes[addToIndex] = piece.index;
+                addToIndex++;
+            }
+        }
+        return validIndexes;
+    }
+    
+    public static ArrayList getAllPotentialMoves(pieceClass[] board, boolean ofWhites){//gets all potential moves of a color
+        ArrayList<Integer> allPotentials = new ArrayList<>();
+        int[] allColors = getAllOfColor(board, ofWhites);
+        for(int pieceIndex:allColors){
+            ArrayList<Integer> movesOfOne = potentialMoves(board,pieceIndex);
+            allPotentials.addAll(movesOfOne);
+        }
+        allPotentials = purgeListDupes(allPotentials);
+        return allPotentials;
+    }
+    
+    public static int getKing(pieceClass[] board, boolean isWhite){//returns the index of the white/black king
+        int indexToReturn = -1;
+        for(pieceClass piece:board){
+            if(piece.type.equals("king") && piece.isWhite == isWhite){
+                indexToReturn = piece.index;
+            }
+        }
+        if(indexToReturn == -1){
+            System.out.print("King not found. Was searching for white? " + isWhite +"\n");
+            System.exit(1);//kill the program
+        }
+        return indexToReturn;
     }
     
     public static boolean isOOB(int newindex, int oldindex, char dir){//returns true if an index is Out Of Bounds of the chessboard
@@ -150,4 +205,18 @@ public class Helpers {
     /*public static void main(String args[]){
         System.out.print( );//test functions here
     }*/
+
+    private static class PredicateImpl implements Predicate<Integer> {
+
+        private final ArrayList<Integer> tempList;
+
+        public PredicateImpl(ArrayList<Integer> tempList) {
+            this.tempList = tempList;
+        }
+
+        @Override
+        public boolean test(Integer eachItem) {
+            return !tempList.contains(eachItem);
+        }
+    }
 }

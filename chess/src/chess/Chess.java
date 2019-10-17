@@ -47,6 +47,9 @@ public class Chess {
     public static String whoseTurn = "white";
     public static boolean turnFlag = true;//true on white
     
+    public static boolean inCheck = false;
+    public static boolean checkmate = false;
+    
     //declare the board
     public static pieceClass[] board  = new pieceClass[8*8];
     
@@ -137,8 +140,6 @@ public class Chess {
         //initialize functions and variables
         setUpBoard();
         
-        boolean isWhitesTurn = true;
-        
         
         //ASCII playable code
         Scanner input = new Scanner(System.in);
@@ -158,7 +159,7 @@ public class Chess {
                 System.out.println("You selected an invalid piece. Try again.");
                 continue;
             }
-            int[] importedArray = Helpers.potentialMoves(board, selected);
+            int[] importedArray = Helpers.intList2prim(Helpers.potentialMoves(board, selected));
             String validCoordsMessage = "Valid moves are at these coords:\n";
             for(int targetIndex:importedArray){
                 targets[targetIndex] = targetIndex;
@@ -180,10 +181,32 @@ public class Chess {
             }
             moveSpace(selected, targetSelected);
             nextTurn();
+            
+            //checking if we're now in check(mate)
+            int kingIndex = Helpers.getKing(board, !turnFlag);//the king of the team that just moved
+            int[] nextPotentials = Helpers.intList2prim(Helpers.getAllPotentialMoves(board, turnFlag));
+            if(Helpers.isIntInList(nextPotentials, kingIndex)){//if true, youre in check at minimum
+                boolean kingCanEscape = false;
+                int[] kingEscapes = Helpers.intList2prim(Helpers.potentialMoves(board, kingIndex));
+                for(int escapePlan:kingEscapes){
+                    if(!Helpers.isIntInList(nextPotentials, escapePlan)) kingCanEscape = true;
+                }//TODO: other pieces can move to block the check. need to handle that.
+                if(kingCanEscape){
+                    inCheck = true;
+                } else {//TODO: actually use these bools to do something. checkmate ends game, check limits movement options.
+                    checkmate = true;//also, maybe tie these bools to the king pieces.
+                }
+            }
         }
         
         
         //testing code
+        
+        //print all potential moves
+        //System.out.print(Arrays.toString(Helpers.intList2prim(Helpers.getAllPotentialMoves(board, isWhitesTurn))));
+        
+        //print the output of getAllOfColor
+        //System.out.print(Arrays.toString(Helpers.getAllOfColor(board, true))+"\n");
         
         /* Read what pieces are at 5,7 and 5,5. Move 5,7 to 5,5. Read again.
         System.out.println(board[Helpers.coord2index(5, 7)].type);
