@@ -82,7 +82,7 @@ public class Helpers {
         return movIndex(coord2index(x,y), dir, steps);//macro to do mov code with coords
     }
 
-    public static ArrayList potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
+    public static int[] potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
         ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
         pieceClass piece = board[pieceIndx];
         for (char[] movement : piece.movements) {
@@ -116,8 +116,12 @@ public class Helpers {
                 }
             }
         }
-
-        return potentials;//may need refactor to also output list of potential kills
+        Integer[] convertStep = potentials.toArray(new Integer[potentials.size()]);
+        int[] returnable = new int[convertStep.length];
+        for(int i = 0; i < convertStep.length; i++){
+            returnable[i] = convertStep[i];
+        }
+        return returnable;//may need refactor to also output list of potential kills
     }
     
     public static boolean isOOB(int newindex, int oldindex, char dir){//returns true if an index is Out Of Bounds of the chessboard
