@@ -1,0 +1,20 @@
+game rules
+- check and checkmate
+- endgame states
+-- checkmate
+-- resign
+-- draw (surprisingly complex: https://en.wikipedia.org/wiki/Rules_of_chess#Draws)
+- promotion (https://en.wikipedia.org/wiki/Rules_of_chess#Pawn_promotion)
+- castling (https://en.wikipedia.org/wiki/Rules_of_chess#Castling)
+- en passant (https://en.wikipedia.org/wiki/Rules_of_chess#En_passant)
+
+optional stuff
+- timer mode
+- player naming (refactor nextTurn() to make turn labels player-set)
+- checkers (the code is generalized enough to make it relatively easy...)
+- sandbox/godmode (spawn units, make one side checkers and one side chess, ...)
+- simple 2nd player AI (https://www.freecodecamp.org/news/simple-chess-ai-step-by-step-1d55a9266977/, at least down to alpha-beta pruning)
+
+GUI stuff
+- proper GUI (non-ASCII)
+- graphics
