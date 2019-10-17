@@ -25,9 +25,12 @@
  * - dead piece bank (container obj, 1 on each side)
  * - - will need code to pull graphics of killed pieces. not sure how this
        will work quite yet. need to look at how graphics are handled
-
  */
+
 package chess;
+
+import java.util.Scanner;
+import java.util.Arrays;
 
 /**
  *
@@ -40,6 +43,9 @@ public class Chess {
     "bpawn","bpawn","bpawn","bpawn","bpawn","bpawn","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
     "b","b","b","b","b","b","b","b","b","b","b","b","b","b","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn",
     "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"};
+    
+    public static String whoseTurn = "white";
+    public static boolean turnFlag = true;//true on white
     
     //declare the board
     public static pieceClass[] board  = new pieceClass[8*8];
@@ -60,8 +66,122 @@ public class Chess {
         board[fromIndx] = new pieceClass("b", fromIndx, false, false);//replace old space with blank piece
     }
     
+    public static String nextTurn(){//simply flips the turn string like a boolean
+        if(whoseTurn.equals("white")){
+            whoseTurn = "black";
+        } else {
+            whoseTurn = "white";
+        }
+        turnFlag = !turnFlag;
+        return whoseTurn;
+    }
+
+//ASCII-playable functions
+    public static void displayBoard(int[] targets){
+        for(int i = 0; i < board.length; i++){
+            char toPrint = '☐';
+            if(board[i].isWhite){
+                switch(board[i].type){
+                    case "rook":
+                        toPrint = '♖';
+                        break;
+                    case "knight":
+                        toPrint = '♘';
+                        break;
+                    case "bishop":
+                        toPrint = '♗';
+                        break;
+                    case "queen":
+                        toPrint = '♕';
+                        break;
+                    case "king":
+                        toPrint = '♔';
+                        break;
+                    case "wpawn":
+                        toPrint = '♙';
+                        break;
+                    default:
+                        break;
+                }
+            } else {//black set
+                switch(board[i].type){
+                    case "rook":
+                        toPrint = '♜';
+                        break;
+                    case "knight":
+                        toPrint = '♞';
+                        break;
+                    case "bishop":
+                        toPrint = '♝';
+                        break;
+                    case "queen":
+                        toPrint = '♛';
+                        break;
+                    case "king":
+                        toPrint = '♚';
+                        break;
+                    case "bpawn":
+                        toPrint = '♟';
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if(targets[i] == i) toPrint = '☒';
+            System.out.print(toPrint);
+            if(Helpers.getX(i) == 7) System.out.println("");
+        }
+    }
+    
     public static void main(String[] args) {//main function (will likely be moved to UI)
+        //initialize functions and variables
         setUpBoard();
+        
+        boolean isWhitesTurn = true;
+        
+        
+        //ASCII playable code
+        Scanner input = new Scanner(System.in);
+        
+        int[] targets = new int[8*8];//most potential moves in 1 move is 27, but this must match the len of the board
+        
+        
+        System.out.println("Player, please note: Coords start at (0,0), at the top left of the board. The bottom right tile is at 7,7.");
+        while(true){
+            Arrays.fill(targets,-1);
+            displayBoard(targets);
+            System.out.printf("It is %s's turn.\nSelect a piece to move by entering an X coord, then a Y coord.\n",whoseTurn);
+            int x = input.nextInt();
+            int y = input.nextInt();
+            int selected = Helpers.coord2index(x, y);
+            if(board[selected].isWhite != turnFlag || board[selected].type.equals("b")){
+                System.out.println("You selected an invalid piece. Try again.");
+                continue;
+            }
+            int[] importedArray = Helpers.potentialMoves(board, selected);
+            String validCoordsMessage = "Valid moves are at these coords:\n";
+            for(int targetIndex:importedArray){
+                targets[targetIndex] = targetIndex;
+                validCoordsMessage += Helpers.getCoords(targetIndex)+"\n";
+            }
+            displayBoard(targets);
+            System.out.print(validCoordsMessage);
+            System.out.println("Select a tile to move to by entering an X and then a Y coord.");
+            x = input.nextInt();
+            y = input.nextInt();
+            int targetSelected = Helpers.coord2index(x, y);
+            boolean isValidMove = false;
+            for(int targetIndex:importedArray){
+                if(targetIndex == targetSelected) isValidMove = true;
+            }
+            if(!isValidMove){
+                System.out.println("You entered an invalid move. Try again.");
+                continue;
+            }
+            moveSpace(selected, targetSelected);
+            nextTurn();
+        }
+        
         
         //testing code
         
