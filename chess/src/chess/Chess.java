@@ -66,7 +66,11 @@ public class Chess {
     public static void moveSpace(int fromIndx, int toIndx){//move from an index to another
         board[toIndx] = board[fromIndx];//piece clones to new index
         board[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
-        board[fromIndx] = new pieceClass("b", fromIndx, false, false);//replace old space with blank piece
+        blankSpace(fromIndx);//replace old space with blank piece
+    }
+    
+    public static void blankSpace(int index){
+        board[index] = new blankPiece(index, "");
     }
     
     public static String nextTurn(){//simply flips the turn string like a boolean

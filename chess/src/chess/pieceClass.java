@@ -25,23 +25,19 @@ package chess;
  * @author Parker
  */
 public class pieceClass {
-    String type = "b";//type of piece. see types above. b is short for blank
     int index = 0;//location in controller array
     int xCoord = 0;//x coord in coordinate plane
     int yCoord = 0;//y coord
-    boolean manySteps = false;//can the piece have more than 8 movements?
-    boolean isWhite = false;//is the pawn black or white?
-    boolean unmoved = true;//has the pawn been moved before?
-    boolean isPawn = false;//is the unit a pawn? needed for pawnKills
-    char[][] movements  = new char[8][];//see above documentation 
-    char[] pawnKills = new char[2];//pawn diagonal kill moves
+    String team = "black";//what team is the pawn on? (generally white or black)
+    //needed for pawns: boolean unmoved = true;//has the pawn been moved before?
+    char[][] movements  = new char[8][];//see above documentation
+    boolean abstractPiece = false;//used for blank tiles, en passant
+    //for pawns: char[] pawnKills = new char[2];//pawn diagonal kill moves
     
-    public pieceClass(String type, int index, boolean isWhite, boolean unmoved){
+    public pieceClass(int index, String team){
         //set by user
-        this.type = type;
         this.index = index;
-        this.isWhite = isWhite;
-        this.unmoved = unmoved;
+        this.team = team;
         
         //set by helpers
         this.xCoord = Helpers.getX(index);
@@ -60,7 +56,6 @@ public class pieceClass {
                 movements[7] = new char[]{'w','w','n'};
                 break;
             case "queen"://7 tiles in any dir, 1 less than board width
-                this.manySteps = true;
                 movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
                 movements[1] = new char[]{'N','N','N','N','N','N','N','N'};
                 movements[2] = new char[]{'e','e','e','e','e','e','e','e'};
@@ -83,28 +78,24 @@ public class pieceClass {
                 break;
                 //needs special handling to not move into check(mate)
             case "wpawn"://white pawn
-                this.isPawn = true;
-                this.pawnKills = new char[]{'W','N'};
+                //this.pawnKills = new char[]{'W','N'};
                 
                 movements[0] = new char[]{'n'};
                 movements[1] = new char[]{'n','n'};
                 break;
             case "bpawn"://black pawn
-                this.isPawn = true;
-                this.pawnKills = new char[]{'E','S'};
+                //this.pawnKills = new char[]{'E','S'};
                 
                 movements[0] = new char[]{'s'};
                 movements[1] = new char[]{'s','s'};
                 break;
             case "rook":
-                this.manySteps = true;
                 movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
                 movements[1] = new char[]{'e','e','e','e','e','e','e','e'};
                 movements[2] = new char[]{'s','s','s','s','s','s','s','s'};
                 movements[3] = new char[]{'w','w','w','w','w','w','w','w'};
                 break;
             case "bishop":
-                this.manySteps = true;
                 movements[0] = new char[]{'N','N','N','N','N','N','N','N'};
                 movements[1] = new char[]{'E','E','E','E','E','E','E','E'};
                 movements[2] = new char[]{'S','S','S','S','S','S','S','S'};
@@ -116,10 +107,17 @@ public class pieceClass {
     }
     
     public void moved(int newIndex){
-        this.unmoved = false;
         this.index = newIndex;
-        if(this.isPawn){
-            this.movements[1] = null;
-        }
     }
+    
+    public abstract int[] potentialMoves();//basically move the current helper function into this
+    
+    public void onDeath(){//ran when a piece is killed by an enemy. blanks the tile the piece was on
+        Chess.blankSpace(this.index);
+    }
+    
+    public boolean isKing(){//useful later for checkmate calcs
+        return false;
+    }
+    
 }
