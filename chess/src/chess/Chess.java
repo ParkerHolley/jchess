@@ -44,8 +44,13 @@ public class Chess {
     "b","b","b","b","b","b","b","b","b","b","b","b","b","b","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn",
     "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"};
     
-    public static String whoseTurn = "white";
-    public static boolean turnFlag = true;//true on white
+    //team tracking vars. can have variable # of teams
+    public static String teams[] = {"white", "black"};
+    public static int backlines[] = {Helpers.BOARDSIZE-1, 0};
+    public static char backlineXorY[] = {'y', 'y'};
+    public static String whoseTurn;
+    public static int numberOfTeams;
+    public static int turnTracker = 0;
     
     public static boolean inCheck = false;
     public static boolean checkmate = false;
@@ -53,9 +58,52 @@ public class Chess {
     //declare the board
     public static pieceClass[] board  = new pieceClass[8*8];
     
+    public static void newPiece(String type, int index, String team){//spawn pieces by type
+        //TODO: Pawn spawning
+        //if substring of the first 4 chars is "pawn"
+                //get substring of 5th char as dir
+                //create new pawn with dir
+        
+        switch(type){
+            case "b":
+                board[index] = new blankPiece(index, "");
+                break;
+            case "rook":
+                board[index] = new rook(index, team);
+                break;
+            case "knight":
+                board[index] = new knight(index, team);
+                break;
+            case "bishop":
+                board[index] = new bishop(index, team);
+                break;
+            case "queen":
+                board[index] = new queen(index, team);
+                break;
+            case "king":
+                board[index] = new king(index, team);
+                break;
+            default:
+                System.out.println("INVALID TYPE SPAWNED IN Chess.newPiece");
+        }
+    }
     
+    //overloaded proc for passant pieces
+    public static void newPiece(String type, int index, String team, pieceClass linkedPiece){
+        switch(type){
+            case "passant":
+                board[index] = new enPassantPiece(index, team, linkedPiece);
+                break;
+            default:
+                System.out.println("INVALID TYPE SPAWNED IN Chess.newPiece overloaded for passant");
+        }
+    }
+
     
     public static void setUpBoard(){//initiailize the board
+        turnTracker = 0;
+        whoseTurn = teams[0];
+        numberOfTeams = teams.length;
         boolean isWhite = false;
         for(int i = 0; i < board.length; i++){
             if(!isWhite && i > 15) isWhite = true;//all black pieces start in positions 0-15
@@ -64,23 +112,42 @@ public class Chess {
     }
     
     public static void moveSpace(int fromIndx, int toIndx){//move from an index to another
+        board[toIndx].onDeath();
         board[toIndx] = board[fromIndx];//piece clones to new index
         board[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
         blankSpace(fromIndx);//replace old space with blank piece
+        checkForPromotion(toIndx);
+    }
+    
+    public static void checkForPromotion(int toIndex){
+        for(int i = 0; i < teams.length; i++){
+            if(!board[toIndex].team.equals(teams[i])){
+                int useCoord;
+                if(backlineXorY[i] == 'y') useCoord = Helpers.getY(toIndex);
+                else useCoord = Helpers.getX(toIndex);
+                if(useCoord == backlines[i]){
+                    promote(toIndex);
+                }
+            }
+        }
+    }
+    
+    public static void promote(int toIndex){
+        //TODO replace piece with queen (or piece of users choice eventually)
     }
     
     public static void blankSpace(int index){
         board[index] = new blankPiece(index, "");
     }
     
-    public static String nextTurn(){//simply flips the turn string like a boolean
-        if(whoseTurn.equals("white")){
-            whoseTurn = "black";
-        } else {
-            whoseTurn = "white";
-        }
-        turnFlag = !turnFlag;
-        return whoseTurn;
+    public static void newPassant(int index, String team, pieceClass spawner){//i would like to make this proc and the one above into a general spawnPiece()
+        board[index] = new enPassantPiece(index, team, spawner);
+    }
+    
+    public static void nextTurn(){//simply flips the turn string like a boolean
+        turnTracker++;
+        if(turnTracker > numberOfTeams) turnTracker = 0;
+        whoseTurn = teams[turnTracker];
     }
 
 //ASCII-playable functions

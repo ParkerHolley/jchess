@@ -20,6 +20,8 @@
 */
 package chess;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Parker
@@ -31,8 +33,11 @@ public class pieceClass {
     String team = "black";//what team is the pawn on? (generally white or black)
     //needed for pawns: boolean unmoved = true;//has the pawn been moved before?
     char[][] movements  = new char[8][];//see above documentation
-    boolean abstractPiece = false;//used for blank tiles, en passant
-    //for pawns: char[] pawnKills = new char[2];//pawn diagonal kill moves
+    boolean jumpsOver = false;//does the piece ignore obstacles except for its destination?
+    boolean manyMoves = true;//is the piece able to stop anywhere on its path? (like rooks)
+    boolean specialKills = false;//is the pawn unable to kill normally (like pawns)?
+    boolean abstractPiece = false;//used for blank tiles, en passant. true for this parent class but false by default.
+    boolean canBePromoted = false;//can this pawn be promoted when it reaches the enemy back line?
     
     public pieceClass(int index, String team){
         //set by user
@@ -43,6 +48,7 @@ public class pieceClass {
         this.xCoord = Helpers.getX(index);
         this.yCoord = Helpers.getY(index);
         
+        /*
         //set by type
         switch(this.type){
             case "knight":
@@ -103,14 +109,40 @@ public class pieceClass {
                 break;
             default:
                 //blanks do not have movement
-        }
+        }*/
     }
     
     public void moved(int newIndex){
         this.index = newIndex;
     }
     
-    public abstract int[] potentialMoves();//basically move the current helper function into this
+    public ArrayList<Integer> potentialMoves(pieceClass[] board){
+        ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
+        for (char[] movement : this.movements) {
+            if(movement == null) break;
+            int tempIndex = this.index;
+            int oldindex = tempIndex;
+            for(int i = 0; i < movement.length; i++){
+                char onemove = movement[i];
+                boolean lastStep = (i == movement.length-1);
+                oldindex = tempIndex;
+                tempIndex = Helpers.movIndex(tempIndex, onemove, 1);
+                if(!Helpers.isOOB(tempIndex, oldindex, movement[i])){
+                    if(Helpers.isOccupied(tempIndex, board)){
+                        if(!this.specialKills && Helpers.isEnemyOccupied(this.index, tempIndex, board)){
+                            if(this.manyMoves || lastStep) potentials.add(tempIndex);
+                        }
+                        if(this.jumpsOver && !lastStep) continue;
+                        break;
+                    }
+                    else if(this.manyMoves || lastStep) potentials.add(tempIndex);
+                } else {
+                    break;
+                }
+            }
+        }
+        return potentials;
+    }
     
     public void onDeath(){//ran when a piece is killed by an enemy. blanks the tile the piece was on
         Chess.blankSpace(this.index);

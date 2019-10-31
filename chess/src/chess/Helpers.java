@@ -83,7 +83,8 @@ public class Helpers {
         return movIndex(coord2index(x,y), dir, steps);//macro to do mov code with coords
     }
 
-    public static ArrayList potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
+    //moved into pieceClass
+    /*public static ArrayList potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
         ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
         pieceClass piece = board[pieceIndx];
         for (char[] movement : piece.movements) {
@@ -118,7 +119,7 @@ public class Helpers {
             }
         }
         return potentials;
-    }
+    }*/
     
     public static int[] intList2prim(ArrayList<Integer> toConvert){//returns Integer ArrayList as primitive int[]
         Integer[] convertStep = toConvert.toArray(new Integer[toConvert.size()]);
@@ -141,12 +142,12 @@ public class Helpers {
         return Arrays.stream(theList).anyMatch(i -> i == theInt);
     }
     
-    public static int[] getAllOfColor(pieceClass[] board, boolean isWhite){//returns an array of indexes of all pieces of a specified color
-        int[] validIndexes = new int[16];//16 potential pieces max
+    public static int[] getAllOfColor(pieceClass[] board, String team){//returns an array of indexes of all pieces of a specified color
+        int[] validIndexes = new int[BOARDSIZE*BOARDSIZE];//future proofed to allow for every tile to have a piece
         int addToIndex = 0;
-        Arrays.fill(validIndexes, -1);
+        Arrays.fill(validIndexes, -1);//fill with a dummy value
         for (pieceClass piece:board) {
-            if(piece.isWhite == isWhite && !piece.type.equals("b")){
+            if(piece.team.equals(team) && !piece.abstractPiece){
                 validIndexes[addToIndex] = piece.index;
                 addToIndex++;
             }
@@ -154,26 +155,28 @@ public class Helpers {
         return validIndexes;
     }
     
-    public static ArrayList getAllPotentialMoves(pieceClass[] board, boolean ofWhites){//gets all potential moves of a color
+    public static ArrayList getAllPotentialMoves(pieceClass[] board, String team){//gets all potential moves of a color
         ArrayList<Integer> allPotentials = new ArrayList<>();
-        int[] allColors = getAllOfColor(board, ofWhites);
+        int[] allColors = getAllOfColor(board, team);
         for(int pieceIndex:allColors){
-            ArrayList<Integer> movesOfOne = potentialMoves(board,pieceIndex);
-            allPotentials.addAll(movesOfOne);
+            if(pieceIndex != -1){//filter out dummy value
+                ArrayList<Integer> movesOfOne = board[pieceIndex].potentialMoves(board);
+                allPotentials.addAll(movesOfOne);
+            }
         }
         allPotentials = purgeListDupes(allPotentials);
         return allPotentials;
     }
     
-    public static int getKing(pieceClass[] board, boolean isWhite){//returns the index of the white/black king
+    public static int getKing(pieceClass[] board, String team){//returns the index of the white/black king
         int indexToReturn = -1;
         for(pieceClass piece:board){
-            if(piece.type.equals("king") && piece.isWhite == isWhite){
+            if(piece.isKing() && piece.team.equals(team)){
                 indexToReturn = piece.index;
             }
         }
         if(indexToReturn == -1){
-            System.out.print("King not found. Was searching for white? " + isWhite +"\n");
+            System.out.print("King not found. Was searching for team " + team +"\n");
             System.exit(1);//kill the program
         }
         return indexToReturn;
@@ -194,13 +197,45 @@ public class Helpers {
     }
     
     public static boolean isOccupied(int index, pieceClass[] board){//checks if a board tile isn't blank
-        return !(board[index].type.equals("b"));
+        return !(board[index].abstractPiece);
+    }
+    
+    //overloaded to check for passants
+    public static boolean isOccupied(int index, pieceClass[] board, char passantCheck){
+        return !(board[index] instanceof blankPiece);
     }
 
     public static boolean isEnemyOccupied(int moverIndex, int index, pieceClass[] board){//checks if a board tile is occupied by an enemy
-        boolean moverIsWhite = board[moverIndex].isWhite;//should only be ran when we know we're moving to an occupied space
-        return (board[index].isWhite != moverIsWhite);
-    }    
+        String moverTeam = board[moverIndex].team;//should only be ran when we know we're moving to an occupied space
+        return (!board[index].team.equals(moverTeam));
+    }
+    
+    public static char[] getDiagsFromCardinal(char cardinal){
+        char[] returnMe = new char[2];
+        switch(cardinal){
+            case 'n':
+                returnMe[0] = 'W';
+                returnMe[1] = 'N';
+                return returnMe;
+            case 'e':
+                returnMe[0] = 'N';
+                returnMe[1] = 'E';
+                return returnMe;
+            case 's':
+                returnMe[0] = 'E';
+                returnMe[1] = 'S';
+                return returnMe;
+            case 'w':
+                returnMe[0] = 'S';
+                returnMe[1] = 'W';
+                return returnMe;
+            default:
+                returnMe[0] = 'o';
+                returnMe[1] = 'o';
+                System.out.println("INVALID CARDINAL IN Helpers.getDiagsFromCardinal");
+                return returnMe;
+        }
+    }
     
     /*public static void main(String args[]){
         System.out.print( );//test functions here
