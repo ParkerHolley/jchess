@@ -27,11 +27,16 @@ import java.util.ArrayList;
  * @author Parker
  */
 public class pieceClass {
+    //set direcetly by constructor args
     int index = 0;//location in controller array
+    String team = "black";//what team is the pawn on? (generally white or black)
+    //set indirectly by constructor args
     int xCoord = 0;//x coord in coordinate plane
     int yCoord = 0;//y coord
-    String team = "black";//what team is the pawn on? (generally white or black)
-    //needed for pawns: boolean unmoved = true;//has the pawn been moved before?
+    
+    //set in constructors per type
+    String icon = "/resources/";//used for icon construction, set dynamically later
+    String name = "parent";//internal name of piece. mostly used for icon construction
     char[][] movements  = new char[8][];//see above documentation
     boolean jumpsOver = false;//does the piece ignore obstacles except for its destination?
     boolean manyMoves = true;//is the piece able to stop anywhere on its path? (like rooks)
@@ -47,69 +52,6 @@ public class pieceClass {
         //set by helpers
         this.xCoord = Helpers.getX(index);
         this.yCoord = Helpers.getY(index);
-        
-        /*
-        //set by type
-        switch(this.type){
-            case "knight":
-                movements[0] = new char[]{'n','n','e'};
-                movements[1] = new char[]{'n','n','w'};
-                movements[2] = new char[]{'e','e','n'};
-                movements[3] = new char[]{'e','e','s'};
-                movements[4] = new char[]{'s','s','e'};
-                movements[5] = new char[]{'s','s','w'};
-                movements[6] = new char[]{'w','w','s'};
-                movements[7] = new char[]{'w','w','n'};
-                break;
-            case "queen"://7 tiles in any dir, 1 less than board width
-                movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
-                movements[1] = new char[]{'N','N','N','N','N','N','N','N'};
-                movements[2] = new char[]{'e','e','e','e','e','e','e','e'};
-                movements[3] = new char[]{'E','E','E','E','E','E','E','E'};
-                movements[4] = new char[]{'s','s','s','s','s','s','s','s'};
-                movements[5] = new char[]{'S','S','S','S','S','S','S','S'};
-                movements[6] = new char[]{'w','w','w','w','w','w','w','w'};
-                movements[7] = new char[]{'W','W','W','W','W','W','W','W'};
-                break;
-                //ensure movement checker doesnt let it move OOB. same for rook/bishop
-            case "king":
-                movements[0] = new char[]{'n'};
-                movements[1] = new char[]{'N'};
-                movements[2] = new char[]{'e'};
-                movements[3] = new char[]{'E'};
-                movements[4] = new char[]{'s'};
-                movements[5] = new char[]{'S'};
-                movements[6] = new char[]{'w'};
-                movements[7] = new char[]{'W'};
-                break;
-                //needs special handling to not move into check(mate)
-            case "wpawn"://white pawn
-                //this.pawnKills = new char[]{'W','N'};
-                
-                movements[0] = new char[]{'n'};
-                movements[1] = new char[]{'n','n'};
-                break;
-            case "bpawn"://black pawn
-                //this.pawnKills = new char[]{'E','S'};
-                
-                movements[0] = new char[]{'s'};
-                movements[1] = new char[]{'s','s'};
-                break;
-            case "rook":
-                movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
-                movements[1] = new char[]{'e','e','e','e','e','e','e','e'};
-                movements[2] = new char[]{'s','s','s','s','s','s','s','s'};
-                movements[3] = new char[]{'w','w','w','w','w','w','w','w'};
-                break;
-            case "bishop":
-                movements[0] = new char[]{'N','N','N','N','N','N','N','N'};
-                movements[1] = new char[]{'E','E','E','E','E','E','E','E'};
-                movements[2] = new char[]{'S','S','S','S','S','S','S','S'};
-                movements[3] = new char[]{'W','W','W','W','W','W','W','W'};
-                break;
-            default:
-                //blanks do not have movement
-        }*/
     }
     
     public void moved(int newIndex){
@@ -151,5 +93,7 @@ public class pieceClass {
     public boolean isKing(){//useful later for checkmate calcs
         return false;
     }
+    
+
     
 }

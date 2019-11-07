@@ -40,9 +40,14 @@ import java.util.Arrays;
 public class Chess {
     //define helping arrays and vars
     public static final String[] STARTINGPOSITIONS = {"rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", "bpawn", "bpawn",
-    "bpawn","bpawn","bpawn","bpawn","bpawn","bpawn","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
-    "b","b","b","b","b","b","b","b","b","b","b","b","b","b","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn",
+    "pawns","pawns","pawns","pawns","pawns","pawns","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
+    "b","b","b","b","b","b","b","b","b","b","b","b","b","b","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn",
     "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"};
+    
+    public static final String[] STARTINGTEAMS = {"black", "black", "black", "black", "black", "black", "black", "black", 
+    "black", "black", "black", "black", "black", "black", "black", "black", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", 
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "white", "white", "white", "white", "white", "white", "white", "white", "white", 
+    "white", "white", "white", "white", "white", "white", "white"};
     
     //team tracking vars. can have variable # of teams
     public static String teams[] = {"white", "black"};
@@ -59,10 +64,10 @@ public class Chess {
     public static pieceClass[] board  = new pieceClass[8*8];
     
     public static void newPiece(String type, int index, String team){//spawn pieces by type
-        //TODO: Pawn spawning
-        //if substring of the first 4 chars is "pawn"
-                //get substring of 5th char as dir
-                //create new pawn with dir
+        if(type.substring(0,4).equals("pawn")){//accepts pawnn, pawne, pawns, pawnw for each cardinal
+            char dir = type.charAt(type.length() - 1);
+            board[index] = new pawn(index, team, dir);
+        }
         
         switch(type){
             case "b":
@@ -104,10 +109,8 @@ public class Chess {
         turnTracker = 0;
         whoseTurn = teams[0];
         numberOfTeams = teams.length;
-        boolean isWhite = false;
         for(int i = 0; i < board.length; i++){
-            if(!isWhite && i > 15) isWhite = true;//all black pieces start in positions 0-15
-            board[i] = new pieceClass(STARTINGPOSITIONS[i], i, isWhite, true);
+            newPiece(STARTINGPOSITIONS[i], i, STARTINGTEAMS[i]);
         }
     }
     
@@ -133,6 +136,7 @@ public class Chess {
     }
     
     public static void promote(int toIndex){
+        System.out.println("Unfinished promotion code reached");
         //TODO replace piece with queen (or piece of users choice eventually)
     }
     
@@ -154,8 +158,8 @@ public class Chess {
     public static void displayBoard(int[] targets){
         for(int i = 0; i < board.length; i++){
             char toPrint = '☐';
-            if(board[i].isWhite){
-                switch(board[i].type){
+            if(board[i].team.equals("white")){
+                switch(board[i].name){
                     case "rook":
                         toPrint = '♖';
                         break;
@@ -171,14 +175,14 @@ public class Chess {
                     case "king":
                         toPrint = '♔';
                         break;
-                    case "wpawn":
+                    case "pawn":
                         toPrint = '♙';
                         break;
                     default:
                         break;
                 }
             } else {//black set
-                switch(board[i].type){
+                switch(board[i].name){
                     case "rook":
                         toPrint = '♜';
                         break;
@@ -194,7 +198,7 @@ public class Chess {
                     case "king":
                         toPrint = '♚';
                         break;
-                    case "bpawn":
+                    case "pawn":
                         toPrint = '♟';
                         break;
                     default:
