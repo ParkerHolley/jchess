@@ -8,19 +8,25 @@ package chess;
  */
 public class enPassantPiece extends pieceClass{
     
-    pieceClass linkedPawn;
+    boolean safedeath = false;
     
     public enPassantPiece(int index, String team, pieceClass passantPawn){
         super(index, team);
         this.name = "passant";
         this.abstractPiece = true;
-        this.linkedPawn = passantPawn;
+        this.linkedPiece = passantPawn;
         this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
     
     @Override
     public void onDeath(){
-        linkedPawn.onDeath();
+        if(linkedPiece != null && !safedeath) linkedPiece.onDeath();
         super.onDeath();
+    }
+    
+    @Override
+    public void beforeDeath(){
+        safedeath = true;
+        onDeath();
     }
 }

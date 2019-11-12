@@ -29,4 +29,10 @@ public class king extends pieceClass{
     public boolean isKing(){
         return true;
     }
+    
+    @Override
+    public void onDeath(){
+        System.out.print(team + " king was killed! This shouldn't happen...\n");
+        System.exit(1);//kill the program
+    }
 }

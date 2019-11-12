@@ -43,6 +43,7 @@ public class pieceClass {
     boolean specialKills = false;//is the pawn unable to kill normally (like pawns)?
     boolean abstractPiece = false;//used for blank tiles, en passant. true for this parent class but false by default.
     boolean canBePromoted = false;//can this pawn be promoted when it reaches the enemy back line?
+    pieceClass linkedPiece;//used for pieces that can directly affect specific others
     
     public pieceClass(int index, String team){
         //set by user
@@ -84,6 +85,10 @@ public class pieceClass {
             }
         }
         return potentials;
+    }
+    
+    public void beforeDeath(){//called in some special death cases, usually overridden
+        onDeath();
     }
     
     public void onDeath(){//ran when a piece is killed by an enemy. blanks the tile the piece was on

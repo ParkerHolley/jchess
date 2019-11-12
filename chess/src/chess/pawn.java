@@ -9,7 +9,6 @@ import java.util.ArrayList;
  * @author Parker
  */
 public class pawn extends pieceClass{
-    pieceClass linkedPassant;
     boolean unmoved;
     char direction;
     char[] killMoves = new char[2];
@@ -37,18 +36,22 @@ public class pawn extends pieceClass{
     
     @Override
     public void moved(int newIndex){
+        int oldIndex = this.index;
+        super.moved(newIndex);
         if(this.unmoved){
             this.unmoved = false;
-            if(Math.abs(newIndex - this.index) == Helpers.BOARDSIZE*2){
-                Chess.newPassant(this.index, this.team, this);//be wary of this obj ref
-                linkedPassant = Chess.board[this.index];
+            if(Math.abs(Helpers.getY(newIndex) - Helpers.getY(oldIndex)) == 2){
+                int passantIndex = Helpers.movIndex(oldIndex, direction, 1);
+                Chess.newPiece("passant", passantIndex, this.team, this);//be wary of this obj ref
+                linkedPiece = Chess.board[passantIndex];
             }
             this.movements[1] = null;
-        } else if(linkedPassant != null){
-            Chess.blankSpace(linkedPassant.index);
-            linkedPassant = null;
+        } else if(linkedPiece != null){
+            System.out.print("Clearing old passant...\n");
+            //The below lines affect THIS piece, not the linkedPiece
+            this.linkedPiece.beforeDeath();
+            this.linkedPiece = null;
         }
-        super.moved(newIndex);
     }
     
     @Override//pawns should have their own movement code since they are so unique
@@ -67,6 +70,13 @@ public class pawn extends pieceClass{
         }
         
         return potentials;
+    }
+    
+    @Override
+    public void onDeath(){
+        this.linkedPiece.beforeDeath();
+        this.linkedPiece = null;
+        super.onDeath();
     }
 
 }

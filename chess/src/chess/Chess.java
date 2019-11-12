@@ -39,7 +39,7 @@ import java.util.Arrays;
 
 public class Chess {
     //define helping arrays and vars
-    public static final String[] STARTINGPOSITIONS = {"rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", "bpawn", "bpawn",
+    public static final String[] STARTINGPOSITIONS = {"rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", "pawns", "pawns",
     "pawns","pawns","pawns","pawns","pawns","pawns","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
     "b","b","b","b","b","b","b","b","b","b","b","b","b","b","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn",
     "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"};
@@ -64,9 +64,10 @@ public class Chess {
     public static pieceClass[] board  = new pieceClass[8*8];
     
     public static void newPiece(String type, int index, String team){//spawn pieces by type
-        if(type.substring(0,4).equals("pawn")){//accepts pawnn, pawne, pawns, pawnw for each cardinal
+        if(type.length() == 5 && type.substring(0,4).equals("pawn")){//accepts pawnn, pawne, pawns, pawnw for each cardinal
             char dir = type.charAt(type.length() - 1);
             board[index] = new pawn(index, team, dir);
+            return;
         }
         
         switch(type){
@@ -89,7 +90,7 @@ public class Chess {
                 board[index] = new king(index, team);
                 break;
             default:
-                System.out.println("INVALID TYPE SPAWNED IN Chess.newPiece");
+                System.out.println("INVALID TYPE "+type+" SPAWNED IN Chess.newPiece");
         }
     }
     
@@ -103,7 +104,7 @@ public class Chess {
                 System.out.println("INVALID TYPE SPAWNED IN Chess.newPiece overloaded for passant");
         }
     }
-
+    
     
     public static void setUpBoard(){//initiailize the board
         turnTracker = 0;
@@ -150,8 +151,16 @@ public class Chess {
     
     public static void nextTurn(){//simply flips the turn string like a boolean
         turnTracker++;
-        if(turnTracker > numberOfTeams) turnTracker = 0;
+        if(turnTracker > numberOfTeams-1) turnTracker = 0;
         whoseTurn = teams[turnTracker];
+    }
+    
+    public static void clearPassants(){
+        for(pieceClass lookAt:board){
+            if(lookAt instanceof enPassantPiece && !lookAt.team.equals(whoseTurn)){
+                lookAt.beforeDeath();
+            }
+        }
     }
 
 //ASCII-playable functions
@@ -215,11 +224,10 @@ public class Chess {
         //initialize functions and variables
         setUpBoard();
         
-        
         //ASCII playable code
         Scanner input = new Scanner(System.in);
         
-        int[] targets = new int[8*8];//most potential moves in 1 move is 27, but this must match the len of the board
+        int[] targets = new int[Helpers.BOARDSIZE*Helpers.BOARDSIZE];//most potential moves in 1 move is 27, but this must match the len of the board
         
         
         System.out.println("Player, please note: Coords start at (0,0), at the top left of the board. The bottom right tile is at 7,7.");
@@ -230,11 +238,11 @@ public class Chess {
             int x = input.nextInt();
             int y = input.nextInt();
             int selected = Helpers.coord2index(x, y);
-            if(board[selected].isWhite != turnFlag || board[selected].type.equals("b")){
+            if(!board[selected].team.equals(whoseTurn) || board[selected].abstractPiece){
                 System.out.println("You selected an invalid piece. Try again.");
                 continue;
             }
-            int[] importedArray = Helpers.intList2prim(Helpers.potentialMoves(board, selected));
+            int[] importedArray = Helpers.intList2prim(board[selected].potentialMoves(board));
             String validCoordsMessage = "Valid moves are at these coords:\n";
             for(int targetIndex:importedArray){
                 targets[targetIndex] = targetIndex;
@@ -255,9 +263,11 @@ public class Chess {
                 continue;
             }
             moveSpace(selected, targetSelected);
+            clearPassants();
             nextTurn();
             
             //checking if we're now in check(mate)
+            /*
             int kingIndex = Helpers.getKing(board, !turnFlag);//the king of the team that just moved
             int[] nextPotentials = Helpers.intList2prim(Helpers.getAllPotentialMoves(board, turnFlag));
             if(Helpers.isIntInList(nextPotentials, kingIndex)){//if true, youre in check at minimum
@@ -271,7 +281,9 @@ public class Chess {
                 } else {//TODO: actually use these bools to do something. checkmate ends game, check limits movement options.
                     checkmate = true;//also, maybe tie these bools to the king pieces.
                 }
+                
             }
+            */
         }
         
         
