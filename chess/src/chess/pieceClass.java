@@ -93,7 +93,5 @@ public class pieceClass {
     public boolean isKing(){//useful later for checkmate calcs
         return false;
     }
-    
 
-    
 }
