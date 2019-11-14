@@ -47,8 +47,6 @@ public class pawn extends pieceClass{
             }
             this.movements[1] = null;
         } else if(linkedPiece != null){
-            System.out.print("Clearing old passant...\n");
-            //The below lines affect THIS piece, not the linkedPiece
             this.linkedPiece.beforeDeath();
             this.linkedPiece = null;
         }

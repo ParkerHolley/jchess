@@ -32,7 +32,7 @@ public class king extends pieceClass{
     
     @Override
     public void onDeath(){
-        System.out.print(team + " king was killed! This shouldn't happen...\n");
+        System.out.print(this.team + " king was killed! This shouldn't happen...\n");
         System.exit(1);//kill the program
     }
 }
