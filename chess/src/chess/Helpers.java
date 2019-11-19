@@ -82,44 +82,6 @@ public class Helpers {
     public static int movCoords(int x, int y, char dir, int steps){
         return movIndex(coord2index(x,y), dir, steps);//macro to do mov code with coords
     }
-
-    //moved into pieceClass
-    /*public static ArrayList potentialMoves(pieceClass[] board, int pieceIndx){ //returns an array of potential movements
-        ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
-        pieceClass piece = board[pieceIndx];
-        for (char[] movement : piece.movements) {
-            if(movement == null) break;
-            int tempIndex = piece.index;
-            int oldindex = tempIndex;
-            for(int i = 0; i < movement.length; i++){
-                char onemove = movement[i];
-                oldindex = tempIndex;
-                tempIndex = movIndex(tempIndex, onemove, 1);
-                if(!isOOB(tempIndex, oldindex, movement[i])){
-                    if(isOccupied(tempIndex, board)){
-                        if(!board[pieceIndx].isPawn && isEnemyOccupied(pieceIndx, tempIndex, board)){
-                            if(board[pieceIndx].manySteps || i == movement.length-1) potentials.add(tempIndex);
-                        }
-                        if("knight".equals(board[pieceIndx].type) && i != movement.length-1) continue;//knights jump over blocks
-                        break;
-                    }
-                    else if(piece.manySteps || i == movement.length-1) potentials.add(tempIndex);
-                } else {
-                    break;
-                }
-            }
-        }
-
-        if(board[pieceIndx].isPawn){//handle pawnkills
-            for (char killMovement : piece.pawnKills){
-                int tempIndex = movIndex(pieceIndx, killMovement, 1);
-                if(!isOOB(tempIndex, pieceIndx, killMovement) && isOccupied(tempIndex, board) && isEnemyOccupied(pieceIndx, tempIndex, board)){
-                    potentials.add(tempIndex);
-                }
-            }
-        }
-        return potentials;
-    }*/
     
     public static int[] intList2prim(ArrayList<Integer> toConvert){//returns Integer ArrayList as primitive int[]
         Integer[] convertStep = toConvert.toArray(new Integer[toConvert.size()]);

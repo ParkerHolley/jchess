@@ -72,9 +72,10 @@ public class pawn extends pieceClass{
     
     @Override
     public void onDeath(){
-        this.linkedPiece.beforeDeath();
-        this.linkedPiece = null;
+        if(linkedPiece != null){
+            this.linkedPiece.beforeDeath();
+            this.linkedPiece = null;
+        }
         super.onDeath();
     }
-
 }

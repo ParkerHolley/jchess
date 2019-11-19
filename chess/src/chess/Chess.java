@@ -57,11 +57,11 @@ public class Chess {
     public static int numberOfTeams;
     public static int turnTracker = 0;
     
-    public static boolean inCheck = false;
-    public static boolean checkmate = false;
+    public static String gameState = "play";//valid gamestates: play (normal gameplay), check, gameover (checkmate or draw)
     
     //declare the board
-    public static pieceClass[] board  = new pieceClass[8*8];
+    public static pieceClass[] board  = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+    public static pieceClass[] futureBoard = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];//used later to look a move into the future
     
     public static void newPiece(String type, int index, String team){//spawn pieces by type
         if(type.length() == 5 && type.substring(0,4).equals("pawn")){//accepts pawnn, pawne, pawns, pawnw for each cardinal
@@ -122,8 +122,18 @@ public class Chess {
         blankSpace(fromIndx);//replace old space with blank piece
         checkForPromotion(toIndx);
     }
+
+    public static void moveOtherSpace(int fromIndx, int toIndx, pieceClass[] otherBoard){
+        otherBoard[toIndx].onDeath();
+        otherBoard[toIndx] = otherBoard[fromIndx];//piece clones to new index
+        otherBoard[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
+        blankSpace(fromIndx, otherBoard);//replace old space with blank piece
+        //no promotions needed here i think
+    }
+    
     
     public static void checkForPromotion(int toIndex){
+        if(!board[toIndex].canBePromoted) return;
         for(int i = 0; i < teams.length; i++){
             if(!board[toIndex].team.equals(teams[i])){
                 int useCoord;
@@ -141,18 +151,27 @@ public class Chess {
         //TODO replace piece with queen (or piece of users choice eventually)
     }
     
-    public static void blankSpace(int index){
+    public static void blankSpace(int index){//spawns a blank tile on the board
         board[index] = new blankPiece(index, "");
     }
     
-    public static void newPassant(int index, String team, pieceClass spawner){//i would like to make this proc and the one above into a general spawnPiece()
-        board[index] = new enPassantPiece(index, team, spawner);
+    public static void blankSpace(int index, pieceClass[] otherBoard){//overloaded for futureBoard
+        otherBoard[index] = new blankPiece(index, "");
     }
     
     public static void nextTurn(){//simply flips the turn string like a boolean
         turnTracker++;
         if(turnTracker > numberOfTeams-1) turnTracker = 0;
         whoseTurn = teams[turnTracker];
+    }
+    
+    public static String getOtherTeam(String team){
+        int tempTracker = 0;
+        for(int i = 0; i < numberOfTeams; i++){
+            if(teams[i].equals(team)) tempTracker = i;
+        }
+        if(tempTracker+1 > numberOfTeams-1) tempTracker -= numberOfTeams;
+        return teams[tempTracker+1];
     }
     
     public static void clearPassants(){
@@ -163,6 +182,49 @@ public class Chess {
         }
     }
 
+    //1. after team X moves a piece, check if king Y is in team Xs allPotMoves
+    //2. if it is, set game state to Check.
+    //3. int[] uncheckMoves is an array of allowed moves that gets team Y out of check (with any piece, not just king)
+    //4. 1 futureboard is needed. test ALL of team Ys possible moves one at a time, checking the futureboard for check each time
+    //5. if the futureboard is not in check after a potential move, that move is put into uncheckMoves
+    //6. while gamestate is in check, team Y can only use moves listed in uncheckMoves
+    //7. if uncheckMoves is empty, checkmate and end the game
+    
+    public static boolean check4check(pieceClass[] board, String team){
+        int[] allEnemyMoves = Helpers.intList2prim(Helpers.getAllPotentialMoves(board, getOtherTeam(team)));
+        int ourKingsTile = Helpers.getKing(board, team);
+        return Helpers.isIntInList(allEnemyMoves, ourKingsTile);
+    }
+    
+    public static pieceClass[] makeDupeBoard(){
+        pieceClass[] dupeBoard = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+        for(int i = 0; i < board.length; i++){
+            dupeBoard[i] = newPiece(board[i].name, i, board[i].team);
+        }
+    }
+    
+    public static int[] testAllMoves(){
+        int[] uncheckers = new int[220];//just over the max legal moves in 1 turn
+        int validMoves = 0;
+        futureBoard = board;
+        int[] allMyPieces = Helpers.getAllOfColor(futureBoard, whoseTurn);
+        for(int pieceLoc:allMyPieces){
+            if(pieceLoc == -1) continue;//filter duds from getAllOfColor
+            pieceClass pieceToCheck = futureBoard[pieceLoc];
+            for(int nextMove:pieceToCheck.potentialMoves(futureBoard)){
+                moveOtherSpace(pieceLoc, nextMove, futureBoard);
+                if(!check4check(futureBoard, getOtherTeam(whoseTurn))){//might be passing wrong team here?
+                    uncheckers[validMoves] = nextMove;
+                    validMoves++;
+                }
+                futureBoard = board;
+            }
+        }
+        int[] returnable = new int[validMoves];
+        System.arraycopy(uncheckers, 0, returnable, 0, validMoves);
+        return returnable;
+    }
+    
 //ASCII-playable functions
     public static void displayBoard(int[] targets){
         for(int i = 0; i < board.length; i++){
@@ -232,6 +294,19 @@ public class Chess {
         
         System.out.println("Player, please note: Coords start at (0,0), at the top left of the board. The bottom right tile is at 7,7.");
         while(true){
+            int[] uncheckMoves = null;
+            if(check4check(board, whoseTurn)) gameState = "check";
+            else gameState = "play";
+            System.out.println("DEBUG: "+gameState);
+            if(gameState.equals("check")){
+                uncheckMoves = testAllMoves();
+                if(uncheckMoves.length == 0){
+                    gameState = "checkmate";
+                    System.out.println("Checkmate! You lose!");
+                } else {
+                    System.out.println("You're in check!");
+                }
+            }
             Arrays.fill(targets,-1);
             displayBoard(targets);
             System.out.printf("It is %s's turn.\nSelect a piece to move by entering an X coord, then a Y coord.\n",whoseTurn);
@@ -242,9 +317,29 @@ public class Chess {
                 System.out.println("You selected an invalid piece. Try again.");
                 continue;
             }
-            int[] importedArray = Helpers.intList2prim(board[selected].potentialMoves(board));
+            int[] importedArray = Helpers.intList2prim(board[selected].potentialMoves(board));//potential moves of selected piece
+            int[] selectedMoves = null;
+            if(gameState.equals("check")){
+                int[] maxPosMoves = new int[60];
+                int validMoves = 0;
+                for(int possibleMove:importedArray){
+                    if(Helpers.isIntInList(uncheckMoves, possibleMove)){
+                        maxPosMoves[validMoves] = possibleMove;
+                        validMoves++;
+                    }
+                }
+                selectedMoves = new int[validMoves];
+                System.arraycopy(maxPosMoves, 0, selectedMoves, 0, validMoves);
+            } else {
+                selectedMoves = new int[importedArray.length];
+                System.arraycopy(importedArray, 0, selectedMoves, 0, importedArray.length);
+            }
+            if(selectedMoves.length == 0){
+                System.out.println("The selected piece has no possible moves. Try again.");
+                continue;
+            }
             String validCoordsMessage = "Valid moves are at these coords:\n";
-            for(int targetIndex:importedArray){
+            for(int targetIndex:selectedMoves){
                 targets[targetIndex] = targetIndex;
                 validCoordsMessage += Helpers.getCoords(targetIndex)+"\n";
             }
@@ -254,11 +349,7 @@ public class Chess {
             x = input.nextInt();
             y = input.nextInt();
             int targetSelected = Helpers.coord2index(x, y);
-            boolean isValidMove = false;
-            for(int targetIndex:importedArray){
-                if(targetIndex == targetSelected) isValidMove = true;
-            }
-            if(!isValidMove){
+            if(!Helpers.isIntInList(selectedMoves, targetSelected)){
                 System.out.println("You entered an invalid move. Try again.");
                 continue;
             }

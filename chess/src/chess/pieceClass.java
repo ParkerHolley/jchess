@@ -43,7 +43,7 @@ public class pieceClass {
     boolean specialKills = false;//is the pawn unable to kill normally (like pawns)?
     boolean abstractPiece = false;//used for blank tiles, en passant. true for this parent class but false by default.
     boolean canBePromoted = false;//can this pawn be promoted when it reaches the enemy back line?
-    pieceClass linkedPiece;//used for pieces that can directly affect specific others
+    pieceClass linkedPiece = null;//used for pieces that can directly affect specific others
     
     public pieceClass(int index, String team){
         //set by user
