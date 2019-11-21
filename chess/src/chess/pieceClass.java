@@ -55,6 +55,10 @@ public class pieceClass {
         this.yCoord = Helpers.getY(index);
     }
     
+    public void beforeMoved(int newIndex){
+        moved(newIndex);
+    }
+    
     public void moved(int newIndex){
         this.index = newIndex;
     }
@@ -91,8 +95,16 @@ public class pieceClass {
         onDeath();
     }
     
+    public void beforeDeath(pieceClass[] boardOn){//overloaded for other boards
+        onDeath(boardOn);
+    }
+    
     public void onDeath(){//ran when a piece is killed by an enemy. blanks the tile the piece was on
         Chess.blankSpace(this.index);
+    }
+
+    public void onDeath(pieceClass[] boardOn){//overloaded for other boards
+        Chess.blankSpace(this.index, boardOn);
     }
     
     public boolean isKing(){//useful later for checkmate calcs

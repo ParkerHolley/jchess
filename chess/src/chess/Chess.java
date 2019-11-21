@@ -63,46 +63,43 @@ public class Chess {
     public static pieceClass[] board  = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
     public static pieceClass[] futureBoard = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];//used later to look a move into the future
     
-    public static void newPiece(String type, int index, String team){//spawn pieces by type
+    public static void newPiece(String type, int index, String team){
+        board[index] = makeNewPiece(type, index, team);
+    }
+
+    public static void newPiece(String type, int index, String team, pieceClass linkedPiece){
+        board[index] = makeNewPiece(type, index, team, linkedPiece);
+    }
+    
+    public static pieceClass makeNewPiece(String type, int index, String team){//spawn pieces by type
         if(type.length() == 5 && type.substring(0,4).equals("pawn")){//accepts pawnn, pawne, pawns, pawnw for each cardinal
             char dir = type.charAt(type.length() - 1);
-            board[index] = new pawn(index, team, dir);
-            return;
+            return new pawn(index, team, dir);
         }
         
         switch(type){
             case "b":
-                board[index] = new blankPiece(index, "");
-                break;
+            case "blank":
+                return new blankPiece(index, "");
             case "rook":
-                board[index] = new rook(index, team);
-                break;
+                return new rook(index, team);
             case "knight":
-                board[index] = new knight(index, team);
-                break;
+                return new knight(index, team);
             case "bishop":
-                board[index] = new bishop(index, team);
-                break;
+                return new bishop(index, team);
             case "queen":
-                board[index] = new queen(index, team);
-                break;
+                return new queen(index, team);
             case "king":
-                board[index] = new king(index, team);
-                break;
+                return new king(index, team);
             default:
                 System.out.println("INVALID TYPE "+type+" SPAWNED IN Chess.newPiece");
+                return new blankPiece(index, "");
         }
     }
     
     //overloaded proc for passant pieces
-    public static void newPiece(String type, int index, String team, pieceClass linkedPiece){
-        switch(type){
-            case "passant":
-                board[index] = new enPassantPiece(index, team, linkedPiece);
-                break;
-            default:
-                System.out.println("INVALID TYPE SPAWNED IN Chess.newPiece overloaded for passant");
-        }
+    public static pieceClass makeNewPiece(String type, int index, String team, pieceClass linkedPiece){
+        return new enPassantPiece(index, team, linkedPiece);
     }
     
     
@@ -116,7 +113,7 @@ public class Chess {
     }
     
     public static void moveSpace(int fromIndx, int toIndx){//move from an index to another
-        board[toIndx].onDeath();
+        board[toIndx].onDeath(board);
         board[toIndx] = board[fromIndx];//piece clones to new index
         board[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
         blankSpace(fromIndx);//replace old space with blank piece
@@ -124,12 +121,14 @@ public class Chess {
     }
 
     public static void moveOtherSpace(int fromIndx, int toIndx, pieceClass[] otherBoard){
-        otherBoard[toIndx].onDeath();
+        otherBoard[toIndx].onDeath(otherBoard);
         otherBoard[toIndx] = otherBoard[fromIndx];//piece clones to new index
-        otherBoard[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
+        otherBoard[toIndx].beforeMoved(toIndx);//update its internal index, its unmoved bool, etc.
         blankSpace(fromIndx, otherBoard);//replace old space with blank piece
         //no promotions needed here i think
     }
+    
+    
     
     
     public static void checkForPromotion(int toIndex){
@@ -190,23 +189,45 @@ public class Chess {
     //6. while gamestate is in check, team Y can only use moves listed in uncheckMoves
     //7. if uncheckMoves is empty, checkmate and end the game
     
-    public static boolean check4check(pieceClass[] board, String team){
-        int[] allEnemyMoves = Helpers.intList2prim(Helpers.getAllPotentialMoves(board, getOtherTeam(team)));
-        int ourKingsTile = Helpers.getKing(board, team);
+    public static boolean check4check(pieceClass[] useBoard, String team){
+        int[] allEnemyMoves = Helpers.intList2prim(Helpers.getAllPotentialMoves(useBoard, getOtherTeam(team)));
+        int ourKingsTile = Helpers.getKing(useBoard, team);
         return Helpers.isIntInList(allEnemyMoves, ourKingsTile);
     }
     
     public static pieceClass[] makeDupeBoard(){
         pieceClass[] dupeBoard = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+        enPassantPiece tempPassant = null;
         for(int i = 0; i < board.length; i++){
-            dupeBoard[i] = newPiece(board[i].name, i, board[i].team);
+            pieceClass pieceAt = board[i];
+            String nameToPass = pieceAt.name;
+            if(pieceAt instanceof pawn){
+                pawn pawnAt = (pawn)pieceAt;
+                nameToPass = nameToPass + pawnAt.direction;
+                //System.out.println("Pawn name: "+nameToPass);
+            } else if(pieceAt instanceof enPassantPiece){
+                tempPassant = (enPassantPiece)pieceAt;
+                continue;
+            }
+            dupeBoard[i] = makeNewPiece(nameToPass, i, pieceAt.team);
         }
+        if(tempPassant != null){
+            dupeBoard[tempPassant.index] = makeNewPiece(tempPassant.name, tempPassant.index, tempPassant.team, dupeBoard[tempPassant.linkedPiece.index]);
+        }
+        for(int i = 0; i < board.length; i++){
+            if(dupeBoard[i] == null){
+                System.out.println(i + " index is null in dupeboard creation");
+                System.exit(1);
+            }
+        }
+        //System.out.println(Arrays.toString(dupeBoard));
+        return dupeBoard;
     }
     
     public static int[] testAllMoves(){
         int[] uncheckers = new int[220];//just over the max legal moves in 1 turn
         int validMoves = 0;
-        futureBoard = board;
+        futureBoard = makeDupeBoard();
         int[] allMyPieces = Helpers.getAllOfColor(futureBoard, whoseTurn);
         for(int pieceLoc:allMyPieces){
             if(pieceLoc == -1) continue;//filter duds from getAllOfColor
@@ -217,16 +238,53 @@ public class Chess {
                     uncheckers[validMoves] = nextMove;
                     validMoves++;
                 }
-                futureBoard = board;
+                futureBoard = makeDupeBoard();
             }
         }
         int[] returnable = new int[validMoves];
         System.arraycopy(uncheckers, 0, returnable, 0, validMoves);
+        //
         return returnable;
     }
     
+    public static int[] testMovesOfOne(int pieceIndex){//filters potential moves for moves that put you into check
+        int validMoves = 0;
+        futureBoard = makeDupeBoard();
+        pieceClass pieceToCheck = futureBoard[pieceIndex];
+        int[] potentialMoves = Helpers.intList2prim(pieceToCheck.potentialMoves(futureBoard));
+        
+        System.out.println("Before filter moves: "+Arrays.toString(potentialMoves));
+        
+        for(int i = 0; i < potentialMoves.length; i++){
+            int nextMove = potentialMoves[i];
+            moveOtherSpace(pieceIndex, nextMove, futureBoard);
+            System.out.println("Potential future #"+i);
+            int[] targets = new int[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+            Arrays.fill(targets,-1);
+            displayBoard(targets, futureBoard);
+            if(check4check(futureBoard, whoseTurn)){
+                System.out.println("That move checks us, remove it");
+                potentialMoves[i] = -1;
+                System.out.println(Arrays.toString(potentialMoves));
+            } else {
+                validMoves++;
+            }
+            futureBoard = makeDupeBoard();
+        }
+        int[] validMovesArray = new int[validMoves];
+        validMoves = 0;
+        for(int i = 0; i < potentialMoves.length; i++){
+            if(potentialMoves[i] != -1){
+                validMovesArray[validMoves] = potentialMoves[i];
+                validMoves++;
+            }
+        }
+        System.out.println("After filter moves: "+Arrays.toString(validMovesArray));
+        return validMovesArray;
+    }
+    
 //ASCII-playable functions
-    public static void displayBoard(int[] targets){
+    public static void displayBoard(int[] targets, pieceClass[] board){
         for(int i = 0; i < board.length; i++){
             char toPrint = '☐';
             if(board[i].team.equals("white")){
@@ -294,11 +352,11 @@ public class Chess {
         
         System.out.println("Player, please note: Coords start at (0,0), at the top left of the board. The bottom right tile is at 7,7.");
         while(true){
-            int[] uncheckMoves = null;
+            //int[] uncheckMoves = null;
             if(check4check(board, whoseTurn)) gameState = "check";
             else gameState = "play";
             System.out.println("DEBUG: "+gameState);
-            if(gameState.equals("check")){
+            /*if(gameState.equals("check")){
                 uncheckMoves = testAllMoves();
                 if(uncheckMoves.length == 0){
                     gameState = "checkmate";
@@ -306,9 +364,9 @@ public class Chess {
                 } else {
                     System.out.println("You're in check!");
                 }
-            }
+            }*/
             Arrays.fill(targets,-1);
-            displayBoard(targets);
+            displayBoard(targets, board);
             System.out.printf("It is %s's turn.\nSelect a piece to move by entering an X coord, then a Y coord.\n",whoseTurn);
             int x = input.nextInt();
             int y = input.nextInt();
@@ -317,8 +375,10 @@ public class Chess {
                 System.out.println("You selected an invalid piece. Try again.");
                 continue;
             }
-            int[] importedArray = Helpers.intList2prim(board[selected].potentialMoves(board));//potential moves of selected piece
-            int[] selectedMoves = null;
+            //int[] importedArray = Helpers.intList2prim(board[selected].potentialMoves(board));//potential moves of selected piece
+            int[] importedArray = testMovesOfOne(selected);
+            //int[] selectedMoves = null;
+            /*
             if(gameState.equals("check")){
                 int[] maxPosMoves = new int[60];
                 int validMoves = 0;
@@ -334,22 +394,24 @@ public class Chess {
                 selectedMoves = new int[importedArray.length];
                 System.arraycopy(importedArray, 0, selectedMoves, 0, importedArray.length);
             }
-            if(selectedMoves.length == 0){
+            */
+            
+            if(importedArray.length == 0){
                 System.out.println("The selected piece has no possible moves. Try again.");
                 continue;
             }
             String validCoordsMessage = "Valid moves are at these coords:\n";
-            for(int targetIndex:selectedMoves){
+            for(int targetIndex:importedArray){
                 targets[targetIndex] = targetIndex;
                 validCoordsMessage += Helpers.getCoords(targetIndex)+"\n";
             }
-            displayBoard(targets);
+            displayBoard(targets, board);
             System.out.print(validCoordsMessage);
             System.out.println("Select a tile to move to by entering an X and then a Y coord.");
             x = input.nextInt();
             y = input.nextInt();
             int targetSelected = Helpers.coord2index(x, y);
-            if(!Helpers.isIntInList(selectedMoves, targetSelected)){
+            if(!Helpers.isIntInList(importedArray, targetSelected)){
                 System.out.println("You entered an invalid move. Try again.");
                 continue;
             }

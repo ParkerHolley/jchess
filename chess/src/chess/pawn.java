@@ -43,13 +43,18 @@ public class pawn extends pieceClass{
             if(Math.abs(Helpers.getY(newIndex) - Helpers.getY(oldIndex)) == 2){
                 int passantIndex = Helpers.movIndex(oldIndex, direction, 1);
                 Chess.newPiece("passant", passantIndex, this.team, this);//be wary of this obj ref
-                linkedPiece = Chess.board[passantIndex];
+                this.linkedPiece = Chess.board[passantIndex];
             }
             this.movements[1] = null;
         } else if(linkedPiece != null){
             this.linkedPiece.beforeDeath();
             this.linkedPiece = null;
         }
+    }
+    
+    @Override
+    public void beforeMoved(int newIndex){
+        super.moved(newIndex);
     }
     
     @Override//pawns should have their own movement code since they are so unique

@@ -169,6 +169,28 @@ public class Helpers {
 
     public static boolean isEnemyOccupied(int moverIndex, int index, pieceClass[] board){//checks if a board tile is occupied by an enemy
         String moverTeam = board[moverIndex].team;//should only be ran when we know we're moving to an occupied space
+        
+        /*
+        if(board[moverIndex] == null){
+            System.out.println("Mover is null ####################################");
+            System.exit(1);
+        }
+        if(board[index] == null){
+            System.out.println("Target is null #####################################");
+            System.exit(1);
+        }
+        if(board[index].team == null){
+            System.out.println("Target team is null #####################################");
+            System.exit(1);
+        }
+        if(moverTeam == null){
+            System.out.println("Source team is null #####################################");
+            System.exit(1);
+        }
+        System.out.println("__________________\nmoverIndex = "+moverIndex+"\nmoverPiece = "+board[moverIndex]+"\nmoverTeam = "+moverTeam+"\nindex = "+index+
+                "\ntargetPiece = "+board[index]+"\ntargetTeam = "+board[index].team);
+        */
+        
         return (!board[index].team.equals(moverTeam));
     }
     
