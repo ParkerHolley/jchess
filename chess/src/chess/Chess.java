@@ -39,52 +39,243 @@ import java.util.Arrays;
 
 public class Chess {
     //define helping arrays and vars
-    public static final String[] STARTINGPOSITIONS = {"rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", "bpawn", "bpawn",
-    "bpawn","bpawn","bpawn","bpawn","bpawn","bpawn","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
-    "b","b","b","b","b","b","b","b","b","b","b","b","b","b","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn","wpawn",
+    public static final String[] STARTINGPOSITIONS = {"rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook", "pawns", "pawns",
+    "pawns","pawns","pawns","pawns","pawns","pawns","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b",
+    "b","b","b","b","b","b","b","b","b","b","b","b","b","b","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn","pawnn",
     "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"};
     
-    public static String whoseTurn = "white";
-    public static boolean turnFlag = true;//true on white
+    public static final String[] STARTINGTEAMS = {"black", "black", "black", "black", "black", "black", "black", "black", 
+    "black", "black", "black", "black", "black", "black", "black", "black", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", 
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "white", "white", "white", "white", "white", "white", "white", "white", "white", 
+    "white", "white", "white", "white", "white", "white", "white"};
     
-    public static boolean inCheck = false;
-    public static boolean checkmate = false;
+    //team tracking vars. can have variable # of teams
+    public static String teams[] = {"white", "black"};
+    public static int backlines[] = {Helpers.BOARDSIZE-1, 0};
+    public static char backlineXorY[] = {'y', 'y'};
+    public static String whoseTurn;
+    public static int numberOfTeams;
+    public static int turnTracker = 0;
+    
+    public static String gameState = "play";//valid gamestates: play (normal gameplay), check, gameover (checkmate or draw)
     
     //declare the board
-    public static pieceClass[] board  = new pieceClass[8*8];
+    public static pieceClass[] board  = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+    public static pieceClass[] futureBoard = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];//used later to look a move into the future
     
+    public static void newPiece(String type, int index, String team){
+        board[index] = makeNewPiece(type, index, team);
+    }
+
+    public static void newPiece(String type, int index, String team, pieceClass linkedPiece){
+        board[index] = makeNewPiece(type, index, team, linkedPiece);
+    }
+    
+    public static pieceClass makeNewPiece(String type, int index, String team){//spawn pieces by type
+        if(type.length() == 5 && type.substring(0,4).equals("pawn")){//accepts pawnn, pawne, pawns, pawnw for each cardinal
+            char dir = type.charAt(type.length() - 1);
+            return new pawn(index, team, dir);
+        }
+        
+        switch(type){
+            case "b":
+            case "blank":
+                return new blankPiece(index, "");
+            case "rook":
+                return new rook(index, team);
+            case "knight":
+                return new knight(index, team);
+            case "bishop":
+                return new bishop(index, team);
+            case "queen":
+                return new queen(index, team);
+            case "king":
+                return new king(index, team);
+            default:
+                System.out.println("INVALID TYPE "+type+" SPAWNED IN Chess.newPiece");
+                return new blankPiece(index, "");
+        }
+    }
+    
+    //overloaded proc for passant pieces
+    public static pieceClass makeNewPiece(String type, int index, String team, pieceClass linkedPiece){
+        return new enPassantPiece(index, team, linkedPiece);
+    }
     
     
     public static void setUpBoard(){//initiailize the board
-        boolean isWhite = false;
+        turnTracker = 0;
+        whoseTurn = teams[0];
+        numberOfTeams = teams.length;
         for(int i = 0; i < board.length; i++){
-            if(!isWhite && i > 15) isWhite = true;//all black pieces start in positions 0-15
-            board[i] = new pieceClass(STARTINGPOSITIONS[i], i, isWhite, true);
+            newPiece(STARTINGPOSITIONS[i], i, STARTINGTEAMS[i]);
         }
     }
     
     public static void moveSpace(int fromIndx, int toIndx){//move from an index to another
+        board[toIndx].onDeath(board);
         board[toIndx] = board[fromIndx];//piece clones to new index
         board[toIndx].moved(toIndx);//update its internal index, its unmoved bool, etc.
-        board[fromIndx] = new pieceClass("b", fromIndx, false, false);//replace old space with blank piece
-    }
-    
-    public static String nextTurn(){//simply flips the turn string like a boolean
-        if(whoseTurn.equals("white")){
-            whoseTurn = "black";
-        } else {
-            whoseTurn = "white";
-        }
-        turnFlag = !turnFlag;
-        return whoseTurn;
+        blankSpace(fromIndx);//replace old space with blank piece
+        checkForPromotion(toIndx);
     }
 
+    public static void moveOtherSpace(int fromIndx, int toIndx, pieceClass[] otherBoard){
+        otherBoard[toIndx].onDeath(otherBoard);
+        otherBoard[toIndx] = otherBoard[fromIndx];//piece clones to new index
+        otherBoard[toIndx].beforeMoved(toIndx);//update its internal index, its unmoved bool, etc.
+        blankSpace(fromIndx, otherBoard);//replace old space with blank piece
+        //no promotions needed here
+    }
+    
+    
+    
+    
+    public static void checkForPromotion(int toIndex){
+        if(!board[toIndex].canBePromoted) return;
+        for(int i = 0; i < teams.length; i++){
+            if(!board[toIndex].team.equals(teams[i])){
+                int useCoord;
+                if(backlineXorY[i] == 'y') useCoord = Helpers.getY(toIndex);
+                else useCoord = Helpers.getX(toIndex);
+                if(useCoord == backlines[i]){
+                    promote(toIndex);
+                }
+            }
+        }
+    }
+    
+    public static void promote(int toIndex){
+        System.out.println("Your pawn has been promoted!");
+        newPiece("queen", toIndex, whoseTurn);
+    }
+    
+    public static void blankSpace(int index){//spawns a blank tile on the board
+        board[index] = new blankPiece(index, "");
+    }
+    
+    public static void blankSpace(int index, pieceClass[] otherBoard){//overloaded for futureBoard
+        otherBoard[index] = new blankPiece(index, "");
+    }
+    
+    public static void nextTurn(){//simply flips the turn string like a boolean
+        turnTracker++;
+        if(turnTracker > numberOfTeams-1) turnTracker = 0;
+        whoseTurn = teams[turnTracker];
+    }
+    
+    public static String getOtherTeam(String team){
+        int tempTracker = 0;
+        for(int i = 0; i < numberOfTeams; i++){
+            if(teams[i].equals(team)) tempTracker = i;
+        }
+        if(tempTracker+1 > numberOfTeams-1) tempTracker -= numberOfTeams;
+        return teams[tempTracker+1];
+    }
+    
+    public static void clearPassants(){
+        for(pieceClass lookAt:board){
+            if(lookAt instanceof enPassantPiece && !lookAt.team.equals(whoseTurn)){
+                lookAt.beforeDeath();
+            }
+        }
+    }
+
+    //1. after team X moves a piece, check if king Y is in team Xs allPotMoves
+    //2. if it is, set game state to Check.
+    //3. int[] uncheckMoves is an array of allowed moves that gets team Y out of check (with any piece, not just king)
+    //4. 1 futureboard is needed. test ALL of team Ys possible moves one at a time, checking the futureboard for check each time
+    //5. if the futureboard is not in check after a potential move, that move is put into uncheckMoves
+    //6. while gamestate is in check, team Y can only use moves listed in uncheckMoves
+    //7. if uncheckMoves is empty, checkmate and end the game
+    
+    public static boolean check4check(pieceClass[] useBoard, String team){
+        int[] allEnemyMoves = Helpers.intList2prim(Helpers.getAllPotentialMoves(useBoard, getOtherTeam(team)));
+        int ourKingsTile = Helpers.getKing(useBoard, team);
+        return Helpers.isIntInList(allEnemyMoves, ourKingsTile);
+    }
+    
+    public static pieceClass[] makeDupeBoard(){
+        pieceClass[] dupeBoard = new pieceClass[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+        enPassantPiece tempPassant = null;
+        for(int i = 0; i < board.length; i++){
+            pieceClass pieceAt = board[i];
+            String nameToPass = pieceAt.name;
+            if(pieceAt instanceof pawn){
+                pawn pawnAt = (pawn)pieceAt;
+                nameToPass = nameToPass + pawnAt.direction;
+                //System.out.println("Pawn name: "+nameToPass);
+            } else if(pieceAt instanceof enPassantPiece){
+                tempPassant = (enPassantPiece)pieceAt;
+                continue;
+            }
+            dupeBoard[i] = makeNewPiece(nameToPass, i, pieceAt.team);
+        }
+        if(tempPassant != null){
+            dupeBoard[tempPassant.index] = makeNewPiece(tempPassant.name, tempPassant.index, tempPassant.team, dupeBoard[tempPassant.linkedPiece.index]);
+        }
+        for(int i = 0; i < board.length; i++){
+            if(dupeBoard[i] == null){
+                System.out.println(i + " index is null in dupeboard creation");
+                System.exit(1);
+            }
+        }
+        //System.out.println(Arrays.toString(dupeBoard));
+        return dupeBoard;
+    }
+    
+    public static boolean didILose(){//sees if the current player is in checkmate
+        int[] allMyPieces = Helpers.getAllOfColor(board, whoseTurn);
+        for(int piece:allMyPieces){
+            if(piece == -1) continue;
+            if(testMovesOfOne(piece).length != 0){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public static int[] testMovesOfOne(int pieceIndex){//filters potential moves for moves that put you into check
+        int validMoves = 0;
+        futureBoard = makeDupeBoard();
+        int[] potentialMoves = Helpers.intList2prim(board[pieceIndex].potentialMoves(futureBoard));
+        
+//        System.out.println("Before filter moves: "+Arrays.toString(potentialMoves));
+        
+        for(int i = 0; i < potentialMoves.length; i++){
+            int nextMove = potentialMoves[i];
+            moveOtherSpace(pieceIndex, nextMove, futureBoard);
+//            System.out.println("Potential future #"+i);
+//            int[] targets = new int[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+//            Arrays.fill(targets,-1);
+//            displayBoard(targets, futureBoard);
+            if(check4check(futureBoard, whoseTurn)){
+//                System.out.println("That move checks us, remove it");
+                potentialMoves[i] = -1;
+//                System.out.println(Arrays.toString(potentialMoves));
+            } else {
+                validMoves++;
+            }
+            futureBoard = makeDupeBoard();
+        }
+        int[] validMovesArray = new int[validMoves];
+        validMoves = 0;
+        for(int i = 0; i < potentialMoves.length; i++){
+            if(potentialMoves[i] != -1){
+                validMovesArray[validMoves] = potentialMoves[i];
+                validMoves++;
+            }
+        }
+//        System.out.println("After filter moves: "+Arrays.toString(validMovesArray));
+        return validMovesArray;
+    }
+    
 //ASCII-playable functions
-    public static void displayBoard(int[] targets){
+    public static void displayBoard(int[] targets, pieceClass[] board){
         for(int i = 0; i < board.length; i++){
             char toPrint = '☐';
-            if(board[i].isWhite){
-                switch(board[i].type){
+            if(board[i].team.equals("white")){
+                switch(board[i].name){
                     case "rook":
                         toPrint = '♖';
                         break;
@@ -100,14 +291,14 @@ public class Chess {
                     case "king":
                         toPrint = '♔';
                         break;
-                    case "wpawn":
+                    case "pawn":
                         toPrint = '♙';
                         break;
                     default:
                         break;
                 }
             } else {//black set
-                switch(board[i].type){
+                switch(board[i].name){
                     case "rook":
                         toPrint = '♜';
                         break;
@@ -123,7 +314,7 @@ public class Chess {
                     case "king":
                         toPrint = '♚';
                         break;
-                    case "bpawn":
+                    case "pawn":
                         toPrint = '♟';
                         break;
                     default:
@@ -140,118 +331,56 @@ public class Chess {
         //initialize functions and variables
         setUpBoard();
         
-        
         //ASCII playable code
         Scanner input = new Scanner(System.in);
         
-        int[] targets = new int[8*8];//most potential moves in 1 move is 27, but this must match the len of the board
+        int[] targets = new int[Helpers.BOARDSIZE*Helpers.BOARDSIZE];//most potential moves in 1 move is 27, but this must match the len of the board
         
         
         System.out.println("Player, please note: Coords start at (0,0), at the top left of the board. The bottom right tile is at 7,7.");
         while(true){
+            if(check4check(board, whoseTurn)) gameState = "check";
+            else gameState = "play";
+            //System.out.println("DEBUG: "+gameState);
+            if(gameState.equals("check")){
+                if(didILose()){
+                    System.out.println("Game over! "+getOtherTeam(whoseTurn)+" wins! Starting a new game...");
+                    setUpBoard();
+                }
+            }
             Arrays.fill(targets,-1);
-            displayBoard(targets);
+            displayBoard(targets, board);
             System.out.printf("It is %s's turn.\nSelect a piece to move by entering an X coord, then a Y coord.\n",whoseTurn);
             int x = input.nextInt();
             int y = input.nextInt();
             int selected = Helpers.coord2index(x, y);
-            if(board[selected].isWhite != turnFlag || board[selected].type.equals("b")){
+            if(!board[selected].team.equals(whoseTurn) || board[selected].abstractPiece){
                 System.out.println("You selected an invalid piece. Try again.");
                 continue;
             }
-            int[] importedArray = Helpers.intList2prim(Helpers.potentialMoves(board, selected));
+            int[] importedArray = testMovesOfOne(selected);
+            if(importedArray.length == 0){
+                System.out.println("The selected piece has no possible moves. Try again.");
+                continue;
+            }
             String validCoordsMessage = "Valid moves are at these coords:\n";
             for(int targetIndex:importedArray){
                 targets[targetIndex] = targetIndex;
                 validCoordsMessage += Helpers.getCoords(targetIndex)+"\n";
             }
-            displayBoard(targets);
+            displayBoard(targets, board);
             System.out.print(validCoordsMessage);
             System.out.println("Select a tile to move to by entering an X and then a Y coord.");
             x = input.nextInt();
             y = input.nextInt();
             int targetSelected = Helpers.coord2index(x, y);
-            boolean isValidMove = false;
-            for(int targetIndex:importedArray){
-                if(targetIndex == targetSelected) isValidMove = true;
-            }
-            if(!isValidMove){
+            if(!Helpers.isIntInList(importedArray, targetSelected)){
                 System.out.println("You entered an invalid move. Try again.");
                 continue;
             }
             moveSpace(selected, targetSelected);
+            clearPassants();
             nextTurn();
-            
-            //checking if we're now in check(mate)
-            int kingIndex = Helpers.getKing(board, !turnFlag);//the king of the team that just moved
-            int[] nextPotentials = Helpers.intList2prim(Helpers.getAllPotentialMoves(board, turnFlag));
-            if(Helpers.isIntInList(nextPotentials, kingIndex)){//if true, youre in check at minimum
-                boolean kingCanEscape = false;
-                int[] kingEscapes = Helpers.intList2prim(Helpers.potentialMoves(board, kingIndex));
-                for(int escapePlan:kingEscapes){
-                    if(!Helpers.isIntInList(nextPotentials, escapePlan)) kingCanEscape = true;
-                }//TODO: other pieces can move to block the check. need to handle that.
-                if(kingCanEscape){
-                    inCheck = true;
-                } else {//TODO: actually use these bools to do something. checkmate ends game, check limits movement options.
-                    checkmate = true;//also, maybe tie these bools to the king pieces.
-                }
-            }
         }
-        
-        
-        //testing code
-        
-        //print all potential moves
-        //System.out.print(Arrays.toString(Helpers.intList2prim(Helpers.getAllPotentialMoves(board, isWhitesTurn))));
-        
-        //print the output of getAllOfColor
-        //System.out.print(Arrays.toString(Helpers.getAllOfColor(board, true))+"\n");
-        
-        /* Read what pieces are at 5,7 and 5,5. Move 5,7 to 5,5. Read again.
-        System.out.println(board[Helpers.coord2index(5, 7)].type);
-        System.out.println(board[Helpers.coord2index(5, 5)].type);
-        moveSpace(Helpers.coord2index(5, 7), Helpers.coord2index(5, 5));
-        System.out.println(board[Helpers.coord2index(5, 7)].type);
-        System.out.println(board[Helpers.coord2index(5, 5)].type);
-        */
-        
-        /* Read if the pieces at 0,6 and 0,1 are white. See what pieces 0,6 can kill.
-        System.out.println("0,6 is white? "+board[Helpers.coord2index(0, 6)].isWhite);//expecting true
-        System.out.println("0,1 is white? "+board[Helpers.coord2index(0, 1)].isWhite);//expecting false
-        System.out.println("Can 0,6 kill 0,1? "+Helpers.isEnemyOccupied(Helpers.coord2index(0,6), Helpers.coord2index(0,1), board));//expecting true
-        System.out.println("Can 0,6 kill 0,7? "+Helpers.isEnemyOccupied(Helpers.coord2index(0,6), Helpers.coord2index(0,7), board));//expecting false
-        */
-
-        /* Make 0,6 into a black piece. See that it is killable by the rook. Kill it with the rook.
-        board[Helpers.coord2index(0,6)].isWhite = false;
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,6)));
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,7)));
-        moveSpace(Helpers.coord2index(0, 7), Helpers.coord2index(0, 6));
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,6)));
-        */
-        
-        /* Knight movement check for the bottom-left-most knight.
-        System.out.println("Knight at 1,7 moves: "+Helpers.potentialMoves(board,Helpers.coord2index(1,7)));
-        System.out.println(Helpers.getCoords(42));
-        System.out.println(Helpers.getCoords(40));
-        */
-        
-        /* Spawn a rook at 1,4 and check its movement.
-        System.out.println(Helpers.coord2index(1,4));
-        board[Helpers.coord2index(1, 4)] = new pieceClass("rook", Helpers.coord2index(1, 4), false, false);
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(1,4)));
-        */
-        
-        /* Spawn a black unit at 2,5 and 4,5. See how the pawns below it are able to kill them.
-        board[Helpers.coord2index(2, 5)] = new pieceClass("queen", Helpers.coord2index(2, 5), false, false);//indx 42
-        board[Helpers.coord2index(4, 5)] = new pieceClass("queen", Helpers.coord2index(4, 5), false, false);//indx 44
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(1,6)));//49
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(2,6)));//50
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(3,6)));//51
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(4,6)));//52
-        board[53].moved(53);//no longer unmoved; after first move, pawns can only move forward 1 tile
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(5,6)));//53
-        */
     }
 }

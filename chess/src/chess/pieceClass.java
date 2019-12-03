@@ -20,106 +20,95 @@
 */
 package chess;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Parker
  */
 public class pieceClass {
-    String type = "b";//type of piece. see types above. b is short for blank
+    //set direcetly by constructor args
     int index = 0;//location in controller array
+    String team = "black";//what team is the pawn on? (generally white or black)
+    //set indirectly by constructor args
     int xCoord = 0;//x coord in coordinate plane
     int yCoord = 0;//y coord
-    boolean manySteps = false;//can the piece have more than 8 movements?
-    boolean isWhite = false;//is the pawn black or white?
-    boolean unmoved = true;//has the pawn been moved before?
-    boolean isPawn = false;//is the unit a pawn? needed for pawnKills
-    char[][] movements  = new char[8][];//see above documentation 
-    char[] pawnKills = new char[2];//pawn diagonal kill moves
     
-    public pieceClass(String type, int index, boolean isWhite, boolean unmoved){
+    //set in constructors per type
+    String icon = "/resources/";//used for icon construction, set dynamically later
+    String name = "parent";//internal name of piece. mostly used for icon construction
+    char[][] movements  = new char[8][];//see above documentation
+    boolean jumpsOver = false;//does the piece ignore obstacles except for its destination?
+    boolean manyMoves = true;//is the piece able to stop anywhere on its path? (like rooks)
+    boolean specialKills = false;//is the pawn unable to kill normally (like pawns)?
+    boolean abstractPiece = false;//used for blank tiles, en passant. true for this parent class but false by default.
+    boolean canBePromoted = false;//can this pawn be promoted when it reaches the enemy back line?
+    pieceClass linkedPiece = null;//used for pieces that can directly affect specific others
+    
+    public pieceClass(int index, String team){
         //set by user
-        this.type = type;
         this.index = index;
-        this.isWhite = isWhite;
-        this.unmoved = unmoved;
+        this.team = team;
         
         //set by helpers
         this.xCoord = Helpers.getX(index);
         this.yCoord = Helpers.getY(index);
-        
-        //set by type
-        switch(this.type){
-            case "knight":
-                movements[0] = new char[]{'n','n','e'};
-                movements[1] = new char[]{'n','n','w'};
-                movements[2] = new char[]{'e','e','n'};
-                movements[3] = new char[]{'e','e','s'};
-                movements[4] = new char[]{'s','s','e'};
-                movements[5] = new char[]{'s','s','w'};
-                movements[6] = new char[]{'w','w','s'};
-                movements[7] = new char[]{'w','w','n'};
-                break;
-            case "queen"://7 tiles in any dir, 1 less than board width
-                this.manySteps = true;
-                movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
-                movements[1] = new char[]{'N','N','N','N','N','N','N','N'};
-                movements[2] = new char[]{'e','e','e','e','e','e','e','e'};
-                movements[3] = new char[]{'E','E','E','E','E','E','E','E'};
-                movements[4] = new char[]{'s','s','s','s','s','s','s','s'};
-                movements[5] = new char[]{'S','S','S','S','S','S','S','S'};
-                movements[6] = new char[]{'w','w','w','w','w','w','w','w'};
-                movements[7] = new char[]{'W','W','W','W','W','W','W','W'};
-                break;
-                //ensure movement checker doesnt let it move OOB. same for rook/bishop
-            case "king":
-                movements[0] = new char[]{'n'};
-                movements[1] = new char[]{'N'};
-                movements[2] = new char[]{'e'};
-                movements[3] = new char[]{'E'};
-                movements[4] = new char[]{'s'};
-                movements[5] = new char[]{'S'};
-                movements[6] = new char[]{'w'};
-                movements[7] = new char[]{'W'};
-                break;
-                //needs special handling to not move into check(mate)
-            case "wpawn"://white pawn
-                this.isPawn = true;
-                this.pawnKills = new char[]{'W','N'};
-                
-                movements[0] = new char[]{'n'};
-                movements[1] = new char[]{'n','n'};
-                break;
-            case "bpawn"://black pawn
-                this.isPawn = true;
-                this.pawnKills = new char[]{'E','S'};
-                
-                movements[0] = new char[]{'s'};
-                movements[1] = new char[]{'s','s'};
-                break;
-            case "rook":
-                this.manySteps = true;
-                movements[0] = new char[]{'n','n','n','n','n','n','n','n'};
-                movements[1] = new char[]{'e','e','e','e','e','e','e','e'};
-                movements[2] = new char[]{'s','s','s','s','s','s','s','s'};
-                movements[3] = new char[]{'w','w','w','w','w','w','w','w'};
-                break;
-            case "bishop":
-                this.manySteps = true;
-                movements[0] = new char[]{'N','N','N','N','N','N','N','N'};
-                movements[1] = new char[]{'E','E','E','E','E','E','E','E'};
-                movements[2] = new char[]{'S','S','S','S','S','S','S','S'};
-                movements[3] = new char[]{'W','W','W','W','W','W','W','W'};
-                break;
-            default:
-                //blanks do not have movement
-        }
+    }
+    
+    public void beforeMoved(int newIndex){
+        moved(newIndex);
     }
     
     public void moved(int newIndex){
-        this.unmoved = false;
         this.index = newIndex;
-        if(this.isPawn){
-            this.movements[1] = null;
-        }
     }
+    
+    public ArrayList<Integer> potentialMoves(pieceClass[] board){
+        ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
+        for (char[] movement : this.movements) {
+            if(movement == null) break;
+            int tempIndex = this.index;
+            int oldindex = tempIndex;
+            for(int i = 0; i < movement.length; i++){
+                char onemove = movement[i];
+                boolean lastStep = (i == movement.length-1);
+                oldindex = tempIndex;
+                tempIndex = Helpers.movIndex(tempIndex, onemove, 1);
+                if(!Helpers.isOOB(tempIndex, oldindex, movement[i])){
+                    if(Helpers.isOccupied(tempIndex, board)){
+                        if(!this.specialKills && Helpers.isEnemyOccupied(this.index, tempIndex, board)){
+                            if(this.manyMoves || lastStep) potentials.add(tempIndex);
+                        }
+                        if(this.jumpsOver && !lastStep) continue;
+                        break;
+                    }
+                    else if(this.manyMoves || lastStep) potentials.add(tempIndex);
+                } else {
+                    break;
+                }
+            }
+        }
+        return potentials;
+    }
+    
+    public void beforeDeath(){//called in some special death cases, usually overridden
+        onDeath();
+    }
+    
+    public void beforeDeath(pieceClass[] boardOn){//overloaded for other boards
+        onDeath(boardOn);
+    }
+    
+    public void onDeath(){//ran when a piece is killed by an enemy. blanks the tile the piece was on
+        Chess.blankSpace(this.index);
+    }
+
+    public void onDeath(pieceClass[] boardOn){//overloaded for other boards
+        Chess.blankSpace(this.index, boardOn);
+    }
+    
+    public boolean isKing(){//useful later for checkmate calcs
+        return false;
+    }
+
 }

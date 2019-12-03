@@ -6,7 +6,6 @@ game rules
 -- draw (surprisingly complex: https://en.wikipedia.org/wiki/Rules_of_chess#Draws)
 - promotion (https://en.wikipedia.org/wiki/Rules_of_chess#Pawn_promotion)
 - castling (https://en.wikipedia.org/wiki/Rules_of_chess#Castling)
-- en passant (https://en.wikipedia.org/wiki/Rules_of_chess#En_passant)
 
 optional stuff
 - timer mode
