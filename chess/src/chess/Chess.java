@@ -125,7 +125,7 @@ public class Chess {
         otherBoard[toIndx] = otherBoard[fromIndx];//piece clones to new index
         otherBoard[toIndx].beforeMoved(toIndx);//update its internal index, its unmoved bool, etc.
         blankSpace(fromIndx, otherBoard);//replace old space with blank piece
-        //no promotions needed here i think
+        //no promotions needed here
     }
     
     
@@ -146,8 +146,8 @@ public class Chess {
     }
     
     public static void promote(int toIndex){
-        System.out.println("Unfinished promotion code reached");
-        //TODO replace piece with queen (or piece of users choice eventually)
+        System.out.println("Your pawn has been promoted!");
+        newPiece("queen", toIndex, whoseTurn);
     }
     
     public static void blankSpace(int index){//spawns a blank tile on the board
@@ -224,48 +224,35 @@ public class Chess {
         return dupeBoard;
     }
     
-    public static int[] testAllMoves(){
-        int[] uncheckers = new int[220];//just over the max legal moves in 1 turn
-        int validMoves = 0;
-        futureBoard = makeDupeBoard();
-        int[] allMyPieces = Helpers.getAllOfColor(futureBoard, whoseTurn);
-        for(int pieceLoc:allMyPieces){
-            if(pieceLoc == -1) continue;//filter duds from getAllOfColor
-            pieceClass pieceToCheck = futureBoard[pieceLoc];
-            for(int nextMove:pieceToCheck.potentialMoves(futureBoard)){
-                moveOtherSpace(pieceLoc, nextMove, futureBoard);
-                if(!check4check(futureBoard, getOtherTeam(whoseTurn))){//might be passing wrong team here?
-                    uncheckers[validMoves] = nextMove;
-                    validMoves++;
-                }
-                futureBoard = makeDupeBoard();
+    public static boolean didILose(){//sees if the current player is in checkmate
+        int[] allMyPieces = Helpers.getAllOfColor(board, whoseTurn);
+        for(int piece:allMyPieces){
+            if(piece == -1) continue;
+            if(testMovesOfOne(piece).length != 0){
+                return false;
             }
         }
-        int[] returnable = new int[validMoves];
-        System.arraycopy(uncheckers, 0, returnable, 0, validMoves);
-        //
-        return returnable;
+        return true;
     }
     
     public static int[] testMovesOfOne(int pieceIndex){//filters potential moves for moves that put you into check
         int validMoves = 0;
         futureBoard = makeDupeBoard();
-        pieceClass pieceToCheck = futureBoard[pieceIndex];
-        int[] potentialMoves = Helpers.intList2prim(pieceToCheck.potentialMoves(futureBoard));
+        int[] potentialMoves = Helpers.intList2prim(board[pieceIndex].potentialMoves(futureBoard));
         
-        System.out.println("Before filter moves: "+Arrays.toString(potentialMoves));
+//        System.out.println("Before filter moves: "+Arrays.toString(potentialMoves));
         
         for(int i = 0; i < potentialMoves.length; i++){
             int nextMove = potentialMoves[i];
             moveOtherSpace(pieceIndex, nextMove, futureBoard);
-            System.out.println("Potential future #"+i);
-            int[] targets = new int[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
-            Arrays.fill(targets,-1);
-            displayBoard(targets, futureBoard);
+//            System.out.println("Potential future #"+i);
+//            int[] targets = new int[Helpers.BOARDSIZE*Helpers.BOARDSIZE];
+//            Arrays.fill(targets,-1);
+//            displayBoard(targets, futureBoard);
             if(check4check(futureBoard, whoseTurn)){
-                System.out.println("That move checks us, remove it");
+//                System.out.println("That move checks us, remove it");
                 potentialMoves[i] = -1;
-                System.out.println(Arrays.toString(potentialMoves));
+//                System.out.println(Arrays.toString(potentialMoves));
             } else {
                 validMoves++;
             }
@@ -279,7 +266,7 @@ public class Chess {
                 validMoves++;
             }
         }
-        System.out.println("After filter moves: "+Arrays.toString(validMovesArray));
+//        System.out.println("After filter moves: "+Arrays.toString(validMovesArray));
         return validMovesArray;
     }
     
@@ -352,19 +339,15 @@ public class Chess {
         
         System.out.println("Player, please note: Coords start at (0,0), at the top left of the board. The bottom right tile is at 7,7.");
         while(true){
-            //int[] uncheckMoves = null;
             if(check4check(board, whoseTurn)) gameState = "check";
             else gameState = "play";
-            System.out.println("DEBUG: "+gameState);
-            /*if(gameState.equals("check")){
-                uncheckMoves = testAllMoves();
-                if(uncheckMoves.length == 0){
-                    gameState = "checkmate";
-                    System.out.println("Checkmate! You lose!");
-                } else {
-                    System.out.println("You're in check!");
+            //System.out.println("DEBUG: "+gameState);
+            if(gameState.equals("check")){
+                if(didILose()){
+                    System.out.println("Game over! "+getOtherTeam(whoseTurn)+" wins! Starting a new game...");
+                    setUpBoard();
                 }
-            }*/
+            }
             Arrays.fill(targets,-1);
             displayBoard(targets, board);
             System.out.printf("It is %s's turn.\nSelect a piece to move by entering an X coord, then a Y coord.\n",whoseTurn);
@@ -375,27 +358,7 @@ public class Chess {
                 System.out.println("You selected an invalid piece. Try again.");
                 continue;
             }
-            //int[] importedArray = Helpers.intList2prim(board[selected].potentialMoves(board));//potential moves of selected piece
             int[] importedArray = testMovesOfOne(selected);
-            //int[] selectedMoves = null;
-            /*
-            if(gameState.equals("check")){
-                int[] maxPosMoves = new int[60];
-                int validMoves = 0;
-                for(int possibleMove:importedArray){
-                    if(Helpers.isIntInList(uncheckMoves, possibleMove)){
-                        maxPosMoves[validMoves] = possibleMove;
-                        validMoves++;
-                    }
-                }
-                selectedMoves = new int[validMoves];
-                System.arraycopy(maxPosMoves, 0, selectedMoves, 0, validMoves);
-            } else {
-                selectedMoves = new int[importedArray.length];
-                System.arraycopy(importedArray, 0, selectedMoves, 0, importedArray.length);
-            }
-            */
-            
             if(importedArray.length == 0){
                 System.out.println("The selected piece has no possible moves. Try again.");
                 continue;
@@ -418,80 +381,6 @@ public class Chess {
             moveSpace(selected, targetSelected);
             clearPassants();
             nextTurn();
-            
-            //checking if we're now in check(mate)
-            /*
-            int kingIndex = Helpers.getKing(board, !turnFlag);//the king of the team that just moved
-            int[] nextPotentials = Helpers.intList2prim(Helpers.getAllPotentialMoves(board, turnFlag));
-            if(Helpers.isIntInList(nextPotentials, kingIndex)){//if true, youre in check at minimum
-                boolean kingCanEscape = false;
-                int[] kingEscapes = Helpers.intList2prim(Helpers.potentialMoves(board, kingIndex));
-                for(int escapePlan:kingEscapes){
-                    if(!Helpers.isIntInList(nextPotentials, escapePlan)) kingCanEscape = true;
-                }//TODO: other pieces can move to block the check. need to handle that.
-                if(kingCanEscape){
-                    inCheck = true;
-                } else {//TODO: actually use these bools to do something. checkmate ends game, check limits movement options.
-                    checkmate = true;//also, maybe tie these bools to the king pieces.
-                }
-                
-            }
-            */
         }
-        
-        
-        //testing code
-        
-        //print all potential moves
-        //System.out.print(Arrays.toString(Helpers.intList2prim(Helpers.getAllPotentialMoves(board, isWhitesTurn))));
-        
-        //print the output of getAllOfColor
-        //System.out.print(Arrays.toString(Helpers.getAllOfColor(board, true))+"\n");
-        
-        /* Read what pieces are at 5,7 and 5,5. Move 5,7 to 5,5. Read again.
-        System.out.println(board[Helpers.coord2index(5, 7)].type);
-        System.out.println(board[Helpers.coord2index(5, 5)].type);
-        moveSpace(Helpers.coord2index(5, 7), Helpers.coord2index(5, 5));
-        System.out.println(board[Helpers.coord2index(5, 7)].type);
-        System.out.println(board[Helpers.coord2index(5, 5)].type);
-        */
-        
-        /* Read if the pieces at 0,6 and 0,1 are white. See what pieces 0,6 can kill.
-        System.out.println("0,6 is white? "+board[Helpers.coord2index(0, 6)].isWhite);//expecting true
-        System.out.println("0,1 is white? "+board[Helpers.coord2index(0, 1)].isWhite);//expecting false
-        System.out.println("Can 0,6 kill 0,1? "+Helpers.isEnemyOccupied(Helpers.coord2index(0,6), Helpers.coord2index(0,1), board));//expecting true
-        System.out.println("Can 0,6 kill 0,7? "+Helpers.isEnemyOccupied(Helpers.coord2index(0,6), Helpers.coord2index(0,7), board));//expecting false
-        */
-
-        /* Make 0,6 into a black piece. See that it is killable by the rook. Kill it with the rook.
-        board[Helpers.coord2index(0,6)].isWhite = false;
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,6)));
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,7)));
-        moveSpace(Helpers.coord2index(0, 7), Helpers.coord2index(0, 6));
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(0,6)));
-        */
-        
-        /* Knight movement check for the bottom-left-most knight.
-        System.out.println("Knight at 1,7 moves: "+Helpers.potentialMoves(board,Helpers.coord2index(1,7)));
-        System.out.println(Helpers.getCoords(42));
-        System.out.println(Helpers.getCoords(40));
-        */
-        
-        /* Spawn a rook at 1,4 and check its movement.
-        System.out.println(Helpers.coord2index(1,4));
-        board[Helpers.coord2index(1, 4)] = new pieceClass("rook", Helpers.coord2index(1, 4), false, false);
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(1,4)));
-        */
-        
-        /* Spawn a black unit at 2,5 and 4,5. See how the pawns below it are able to kill them.
-        board[Helpers.coord2index(2, 5)] = new pieceClass("queen", Helpers.coord2index(2, 5), false, false);//indx 42
-        board[Helpers.coord2index(4, 5)] = new pieceClass("queen", Helpers.coord2index(4, 5), false, false);//indx 44
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(1,6)));//49
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(2,6)));//50
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(3,6)));//51
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(4,6)));//52
-        board[53].moved(53);//no longer unmoved; after first move, pawns can only move forward 1 tile
-        System.out.println(Helpers.potentialMoves(board, Helpers.coord2index(5,6)));//53
-        */
     }
 }

@@ -16,7 +16,7 @@ public class pawn extends pieceClass{
     public pawn(int index, String team, char direction){
         //call parent constructor
         super(index, team);
-        
+                
         //initialize defaults
         this.unmoved = true;
         this.name = "pawn";
@@ -40,7 +40,7 @@ public class pawn extends pieceClass{
         super.moved(newIndex);
         if(this.unmoved){
             this.unmoved = false;
-            if(Math.abs(Helpers.getY(newIndex) - Helpers.getY(oldIndex)) == 2){
+            if(Math.abs(Helpers.getY(newIndex) - Helpers.getY(oldIndex)) == 2){//if youve moved two spaces in one turn
                 int passantIndex = Helpers.movIndex(oldIndex, direction, 1);
                 Chess.newPiece("passant", passantIndex, this.team, this);//be wary of this obj ref
                 this.linkedPiece = Chess.board[passantIndex];
@@ -61,7 +61,6 @@ public class pawn extends pieceClass{
     public ArrayList<Integer> potentialMoves(pieceClass[] board){
         ArrayList<Integer> potentials = new ArrayList<>();//variable length array (list)
         potentials = super.potentialMoves(board);
-        
         //handle killmoves
         for(char killDir:killMoves){
             int tempIndex = Helpers.movIndex(this.index, killDir, 1);
