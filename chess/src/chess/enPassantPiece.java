@@ -15,7 +15,6 @@ public class enPassantPiece extends pieceClass{
         this.name = "passant";
         this.abstractPiece = true;
         this.linkedPiece = passantPawn;
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
     
     @Override

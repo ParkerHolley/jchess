@@ -169,29 +169,11 @@ public class Helpers {
 
     public static boolean isEnemyOccupied(int moverIndex, int index, pieceClass[] board){//checks if a board tile is occupied by an enemy
         String moverTeam = board[moverIndex].team;//should only be ran when we know we're moving to an occupied space
-        
-        /*
-        if(board[moverIndex] == null){
-            System.out.println("Mover is null ####################################");
-            System.exit(1);
-        }
-        if(board[index] == null){
-            System.out.println("Target is null #####################################");
-            System.exit(1);
-        }
-        if(board[index].team == null){
-            System.out.println("Target team is null #####################################");
-            System.exit(1);
-        }
-        if(moverTeam == null){
-            System.out.println("Source team is null #####################################");
-            System.exit(1);
-        }
-        System.out.println("__________________\nmoverIndex = "+moverIndex+"\nmoverPiece = "+board[moverIndex]+"\nmoverTeam = "+moverTeam+"\nindex = "+index+
-                "\ntargetPiece = "+board[index]+"\ntargetTeam = "+board[index].team);
-        */
-        
         return (!board[index].team.equals(moverTeam));
+    }
+    
+    public static String capitalFirstLetter(String toCap){
+        return toCap.substring(0,1).toUpperCase()+toCap.substring(1);
     }
     
     public static char[] getDiagsFromCardinal(char cardinal){
@@ -221,13 +203,6 @@ public class Helpers {
         }
     }
     
-    public static String assembleIcon(String initialIcon, String team, String name){
-        return initialIcon + team + "set/" + name + ".png";
-    }
-    
-    /*public static void main(String args[]){
-        System.out.print( );//test functions here
-    }*/
 
     private static class PredicateImpl implements Predicate<Integer> {
 

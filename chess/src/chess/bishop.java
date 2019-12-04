@@ -13,7 +13,6 @@ public class bishop extends pieceClass{
         
         //by type
         this.name = "bishop";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
         this.movements[0] = new char[]{'N','N','N','N','N','N','N','N'};
         this.movements[1] = new char[]{'E','E','E','E','E','E','E','E'};
         this.movements[2] = new char[]{'S','S','S','S','S','S','S','S'};

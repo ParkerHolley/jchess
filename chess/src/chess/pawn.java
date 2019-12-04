@@ -20,7 +20,6 @@ public class pawn extends pieceClass{
         //initialize defaults
         this.unmoved = true;
         this.name = "pawn";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
         
         //manual set var
         this.direction = direction;

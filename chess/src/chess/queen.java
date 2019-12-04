@@ -22,6 +22,5 @@ public class queen extends pieceClass{
         this.movements[7] = new char[]{'W','W','W','W','W','W','W','W'};
         
         this.name = "queen";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
 }

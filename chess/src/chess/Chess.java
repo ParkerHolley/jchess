@@ -270,7 +270,8 @@ public class Chess {
         return validMovesArray;
     }
     
-//ASCII-playable functions
+//Obsoleted but functional ASCII-playable functions
+/*    
     public static void displayBoard(int[] targets, pieceClass[] board){
         for(int i = 0; i < board.length; i++){
             char toPrint = '☐';
@@ -383,4 +384,5 @@ public class Chess {
             nextTurn();
         }
     }
+*/
 }

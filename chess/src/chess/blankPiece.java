@@ -12,7 +12,6 @@ public class blankPiece extends pieceClass {
         
         this.abstractPiece = true;
         this.name = "blank";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
     
     @Override

@@ -18,6 +18,5 @@ public class rook extends pieceClass{
         this.movements[3] = new char[]{'w','w','w','w','w','w','w','w'};
         
         this.name = "rook";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
 }

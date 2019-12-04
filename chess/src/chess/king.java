@@ -22,7 +22,6 @@ public class king extends pieceClass{
         this.movements[7] = new char[]{'W'};
         
         this.name = "king";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
     
     @Override

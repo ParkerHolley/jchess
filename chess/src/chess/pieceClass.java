@@ -35,7 +35,6 @@ public class pieceClass {
     int yCoord = 0;//y coord
     
     //set in constructors per type
-    String icon = "/resources/";//used for icon construction, set dynamically later
     String name = "parent";//internal name of piece. mostly used for icon construction
     char[][] movements  = new char[8][];//see above documentation
     boolean jumpsOver = false;//does the piece ignore obstacles except for its destination?

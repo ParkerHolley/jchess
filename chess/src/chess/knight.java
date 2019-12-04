@@ -25,6 +25,5 @@ public class knight extends pieceClass{
         this.manyMoves = false;
         
         this.name = "knight";
-        this.icon = Helpers.assembleIcon(this.icon, this.team, this.name);
     }
 }
