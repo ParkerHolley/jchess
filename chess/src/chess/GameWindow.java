@@ -211,12 +211,13 @@ public class GameWindow{
                                 
                                 if(selecting || selected == -1){
 
-                                    int[] importedArray = Chess.testMovesOfOne(index);
                                     pieceClass chosenPiece = Chess.board[index];
                                     if(!chosenPiece.team.equals(Chess.whoseTurn) || chosenPiece.abstractPiece){
                                         lblAnnouncer.setText("You don't own that piece.");
                                         return;
                                     }
+                                    
+                                    int[] importedArray = Chess.testMovesOfOne(index);
                                     if(importedArray.length == 0){
                                         lblAnnouncer.setText("He has no moves.");
                                         return;

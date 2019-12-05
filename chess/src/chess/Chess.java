@@ -146,7 +146,7 @@ public class Chess {
     }
     
     public static void promote(int toIndex){
-        System.out.println("Your pawn has been promoted!");
+        //System.out.println("Your pawn has been promoted!");
         newPiece("queen", toIndex, whoseTurn);
     }
     
